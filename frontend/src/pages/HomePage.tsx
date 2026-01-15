@@ -317,16 +317,36 @@ export default function HomePage() {
   const featured = !canSearch ? trending[0] : undefined;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="min-h-screen bg-[#050A18] text-zinc-100">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-44 left-1/2 h-[520px] w-[980px] -translate-x-1/2 rounded-full bg-white/5 blur-3xl" />
-        <div className="absolute -top-24 left-1/4 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="absolute -top-24 right-1/4 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl" />
-        <div className="absolute inset-0 opacity-[0.35]">
-          <div className="absolute -left-24 top-32 h-[520px] w-[520px] rotate-12 rounded-[48px] bg-gradient-to-br from-white/10 to-transparent blur-sm" />
-          <div className="absolute right-0 top-44 h-[560px] w-[560px] -rotate-6 rounded-[56px] bg-gradient-to-tr from-white/10 to-transparent blur-sm" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#081433] via-[#050A18] to-[#030611]" />
+
+        <div className="absolute inset-0 bg-[radial-gradient(900px_circle_at_20%_10%,rgba(56,189,248,0.16),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(900px_circle_at_80%_12%,rgba(99,102,241,0.16),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(700px_circle_at_50%_-10%,rgba(255,255,255,0.08),transparent_55%)]" />
+
+        <div className="absolute -top-56 left-1/2 h-[700px] w-[1200px] -translate-x-1/2 rounded-full bg-sky-500/12 blur-[100px]" />
+        <div className="absolute -top-32 left-[8%] h-[560px] w-[560px] rounded-full bg-blue-500/18 blur-[100px]" />
+        <div className="absolute -top-32 right-[10%] h-[560px] w-[560px] rounded-full bg-indigo-500/16 blur-[100px]" />
+
+        <div className="absolute inset-0 opacity-[0.45]">
+          <div className="absolute -left-24 top-28 h-[560px] w-[560px] rotate-12 rounded-[56px] bg-gradient-to-br from-white/12 to-transparent blur-md" />
+          <div className="absolute right-0 top-40 h-[620px] w-[620px] -rotate-6 rounded-[64px] bg-gradient-to-tr from-white/12 to-transparent blur-md" />
         </div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.65)_55%,rgba(0,0,0,0.9)_100%)]" />
+
+        <div className="absolute inset-0 opacity-[0.09]">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.16)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.16)_1px,transparent_1px)] bg-[size:72px_72px]" />
+        </div>
+
+        <div
+          className="absolute inset-0 opacity-[0.10] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.40'/%3E%3C/svg%3E\")",
+          }}
+        />
+
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.55)_55%,rgba(0,0,0,0.92)_100%)]" />
       </div>
 
       <main className="relative mx-auto max-w-6xl px-4 pb-14 pt-16 sm:pt-24">
