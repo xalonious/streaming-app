@@ -1,4 +1,3 @@
-// src/service/tmdbService.ts
 import axios from "axios";
 import ServiceError from "../core/ServiceError";
 
