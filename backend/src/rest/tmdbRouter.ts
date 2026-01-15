@@ -1,4 +1,3 @@
-// src/rest/tmdbRouter.ts
 import express, { Request, Response } from "express";
 import asyncHandler from "../core/asyncHandler";
 import { validateRequest } from "../core/validation";
