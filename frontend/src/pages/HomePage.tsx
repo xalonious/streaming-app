@@ -211,7 +211,7 @@ export default function HomePage() {
   const trendGridRef = useRef<HTMLDivElement | null>(null);
 
   const [q, setQ] = useState("");
-  const dq = useDebounce(q, 250);
+  const dq = useDebounce(q, 400);
 
   const [type, setType] = useState<SearchType>("multi");
   const [loading, setLoading] = useState(false);
@@ -315,6 +315,14 @@ export default function HomePage() {
   }, [trimmed, canSearch]);
 
   const featured = !canSearch ? trending[0] : undefined;
+
+  function clearSearchHistory() {
+    try {
+      localStorage.removeItem(RECENT_KEY);
+    } catch {}
+    setRecent([]);
+    if (!canSearch) setQ("");
+  }
 
   return (
     <div className="min-h-screen bg-[#050A18] text-zinc-100">
@@ -433,6 +441,13 @@ export default function HomePage() {
                           {r}
                         </button>
                       ))}
+                      <span className="text-zinc-700">•</span>
+                      <button
+                        onClick={clearSearchHistory}
+                        className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] text-zinc-200 ring-1 ring-white/[0.08] hover:bg-white/[0.1]"
+                      >
+                        Clear history
+                      </button>
                     </>
                   ) : null}
                 </>
