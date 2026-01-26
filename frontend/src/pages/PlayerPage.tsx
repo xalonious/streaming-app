@@ -16,19 +16,19 @@ export default function PlayerPage() {
       setUrl(null);
       setError(null);
 
+      const id = params.id ? Number(params.id) : NaN;
+      const season = params.season ? Number(params.season) : NaN;
+      const episode = params.episode ? Number(params.episode) : NaN;
+
       try {
-        if (params.type === "movie" && params.id) {
-          const r = await getMovieStream(Number(params.id));
+        if (Number.isFinite(id) && Number.isFinite(season) && Number.isFinite(episode)) {
+          const r = await getTvStream(id, season, episode);
           if (!cancelled) setUrl(r.url);
           return;
         }
 
-        if (params.id && params.season && params.episode) {
-          const r = await getTvStream(
-            Number(params.id),
-            Number(params.season),
-            Number(params.episode)
-          );
+        if (Number.isFinite(id)) {
+          const r = await getMovieStream(id);
           if (!cancelled) setUrl(r.url);
           return;
         }
@@ -43,7 +43,7 @@ export default function PlayerPage() {
     return () => {
       cancelled = true;
     };
-  }, [params.id, params.type, params.season, params.episode]);
+  }, [params.id, params.season, params.episode]);
 
   return (
     <div className="fixed inset-0 bg-black">

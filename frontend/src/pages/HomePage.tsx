@@ -1,193 +1,14 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useDebounce from "../hooks/useDebounce";
 import { searchTmdb, trendingTmdb, type SearchResult } from "../api/tmdb";
 import { useNavigate } from "react-router-dom";
+import { Pill } from "../components/Pill";
+import { SkeletonCard } from "../components/SkeletonCard";
+import { ResultCard } from "../components/ResultCard";
+import { FeaturedHero } from "../components/FeaturedHero";
 
 type SearchType = "multi" | "movie" | "tv";
 type TrendingWindow = "day" | "week";
-
-function Pill({
-  active,
-  children,
-  onClick,
-}: {
-  active?: boolean;
-  children: React.ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={[
-        "rounded-full px-3 py-1.5 text-xs transition",
-        active
-          ? "bg-white/10 text-zinc-100 ring-1 ring-white/15"
-          : "bg-zinc-950/40 text-zinc-300 ring-1 ring-white/10 hover:bg-white/10 hover:text-zinc-100",
-      ].join(" ")}
-    >
-      {children}
-    </button>
-  );
-}
-
-function SkeletonCard() {
-  return (
-    <div className="rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.06] p-2">
-      <div className="aspect-[2/3] animate-pulse rounded-xl bg-white/[0.05]" />
-      <div className="mt-3 space-y-2 px-1 pb-2">
-        <div className="h-3 w-3/4 animate-pulse rounded bg-white/[0.05]" />
-        <div className="h-3 w-1/3 animate-pulse rounded bg-white/[0.05]" />
-      </div>
-    </div>
-  );
-}
-
-function Poster({ src, title }: { src: string | null; title: string }) {
-  if (!src) {
-    return (
-      <div className="flex aspect-[2/3] items-center justify-center rounded-xl bg-white/[0.04] text-xs text-zinc-500">
-        No poster
-      </div>
-    );
-  }
-  return (
-    <img
-      src={src}
-      alt={title}
-      loading="lazy"
-      className="aspect-[2/3] w-full rounded-xl object-cover"
-    />
-  );
-}
-
-function ResultCard({ item, onOpen }: { item: SearchResult; onOpen: () => void }) {
-  return (
-    <button className="group text-left" onClick={onOpen}>
-      <div
-        className={[
-          "relative rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.07] p-2",
-          "transition will-change-transform",
-          "hover:-translate-y-0.5 hover:bg-white/[0.05] hover:ring-white/[0.12]",
-        ].join(" ")}
-      >
-        <div className="pointer-events-none absolute -inset-0.5 rounded-[18px] opacity-0 blur-md transition group-hover:opacity-100 bg-gradient-to-b from-white/10 to-transparent" />
-
-        <div className="relative overflow-hidden rounded-xl">
-          <Poster src={item.poster} title={item.title} />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/80 to-transparent opacity-0 transition group-hover:opacity-100" />
-        </div>
-
-        <div className="relative mt-3 space-y-1 px-1 pb-2">
-          <div className="line-clamp-1 text-sm font-semibold tracking-tight">{item.title}</div>
-          <div className="flex items-center gap-2 text-[11px] text-zinc-400">
-            <span className="rounded-full bg-white/10 px-2 py-0.5 ring-1 ring-white/10">
-              {item.type === "tv" ? "TV" : "Movie"}
-            </span>
-            {item.year ? <span>{item.year}</span> : null}
-          </div>
-        </div>
-      </div>
-    </button>
-  );
-}
-
-function FeaturedHero({
-  item,
-  onPlay,
-  onDetails,
-  onSeeMore,
-}: {
-  item: SearchResult;
-  onPlay: () => void;
-  onDetails: () => void;
-  onSeeMore: () => void;
-}) {
-  const backdrop = ((item as any).backdrop as string | null | undefined) ?? item.poster;
-
-  return (
-    <section className="mb-10">
-      <div className="relative overflow-hidden rounded-3xl ring-1 ring-white/[0.10] bg-white/[0.03]">
-        {backdrop ? (
-          <div className="absolute inset-0">
-            <img
-              src={backdrop}
-              alt=""
-              className="h-full w-full object-cover opacity-70 blur-[1px] scale-[1.03]"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
-        )}
-
-        <div className="relative grid gap-6 p-6 sm:p-10 lg:grid-cols-[1.25fr_0.75fr]">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.07] px-3 py-1 text-[11px] text-zinc-200 ring-1 ring-white/[0.10]">
-              <span className="font-semibold tracking-wide">FEATURED</span>
-              <span className="text-zinc-500">•</span>
-              <span className="text-zinc-300">
-                Trending {item.type === "tv" ? "TV" : "Movie"}
-              </span>
-              {item.year ? (
-                <>
-                  <span className="text-zinc-500">•</span>
-                  <span className="text-zinc-300">{item.year}</span>
-                </>
-              ) : null}
-            </div>
-
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">
-              {item.title}
-            </h2>
-
-            <p className="mt-3 line-clamp-3 max-w-prose text-sm leading-relaxed text-zinc-300/90">
-              {item.overview || "—"}
-            </p>
-
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <button
-                onClick={onPlay}
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-zinc-100"
-              >
-                <span className="text-[12px]">▶</span>
-                Play
-              </button>
-
-              <button
-                onClick={onDetails}
-                className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-zinc-100 ring-1 ring-white/15 hover:bg-white/15"
-              >
-                Details
-              </button>
-
-              <button
-                onClick={onSeeMore}
-                className="inline-flex items-center gap-2 rounded-xl bg-white/0 px-3 py-2 text-sm text-zinc-300 hover:text-zinc-100"
-              >
-                See more <span className="opacity-80">↓</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="hidden lg:block">
-            <div className="ml-auto w-[240px]">
-              <div className="relative">
-                <div className="pointer-events-none absolute -inset-4 rounded-3xl bg-gradient-to-b from-white/10 to-transparent blur-2xl opacity-70" />
-                <div className="relative rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.12] p-2">
-                  <Poster src={item.poster} title={item.title} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      </div>
-    </section>
-  );
-}
 
 const RECENT_KEY = "xalonstream:recentQueries";
 function loadRecent(): string[] {
@@ -314,7 +135,6 @@ export default function HomePage() {
       cancelled = true;
     };
   }, [canSearch, trendWindow, type]);
-
 
   const featured = !canSearch ? trending[0] : undefined;
 
