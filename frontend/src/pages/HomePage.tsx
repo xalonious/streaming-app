@@ -228,6 +228,17 @@ export default function HomePage() {
   const trimmed = useMemo(() => dq.trim(), [dq]);
   const canSearch = trimmed.length >= 2;
 
+  function commitRecentQuery(query: string) {
+    const t = query.trim();
+    if (t.length < 2) return;
+
+    setRecent((prev) => {
+      const next = [t, ...prev.filter((x) => x !== t)].slice(0, 8);
+      saveRecent(next);
+      return next;
+    });
+  }
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const isCmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
@@ -304,15 +315,6 @@ export default function HomePage() {
     };
   }, [canSearch, trendWindow, type]);
 
-  useEffect(() => {
-    if (!canSearch) return;
-
-    setRecent((prev) => {
-      const next = [trimmed, ...prev.filter((x) => x !== trimmed)].slice(0, 8);
-      saveRecent(next);
-      return next;
-    });
-  }, [trimmed, canSearch]);
 
   const featured = !canSearch ? trending[0] : undefined;
 
@@ -479,7 +481,10 @@ export default function HomePage() {
                     <ResultCard
                       key={`${r.type}:${r.id}`}
                       item={r}
-                      onOpen={() => nav(`/title/${r.type}/${r.id}`)}
+                      onOpen={() => {
+                        commitRecentQuery(trimmed);
+                        nav(`/title/${r.type}/${r.id}`);
+                      }}
                     />
                   ))}
                 </div>
