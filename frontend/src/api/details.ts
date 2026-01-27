@@ -14,3 +14,8 @@ export const getTvSeason = async (id: number, season: number) => {
   const res = await apiClient.get(`/api/tmdb/tv/${id}/season/${season}`);
   return res.data;
 };
+
+export const getTvAllEpisodes = async (id: number) => {
+  const res = await apiClient.get(`/api/tmdb/tv/${id}/episodes`);
+  return res.data;
+};

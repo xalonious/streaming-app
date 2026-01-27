@@ -59,6 +59,16 @@ router.get(
 );
 
 router.get(
+  "/tv/:tmdbId/episodes",
+  validateRequest({ params: tmdbIdParamsSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { tmdbId } = req.params as { tmdbId: string };
+    const data = await tmdbService.getTvAllEpisodes(Number(tmdbId));
+    res.status(200).json(data);
+  })
+);
+
+router.get(
   "/tv/:tmdbId/season/:season",
   validateRequest({ params: tvSeasonParamsSchema }),
   asyncHandler(async (req: Request, res: Response) => {

@@ -7,10 +7,6 @@ import { useTitleDetails, type TmdbMovie, type TmdbTv, type ErrorLike } from "..
 import { useSeasonEpisodes } from "../hooks/useSeasonEpisodes";
 import { useCrossSeasonEpisodeSearch } from "../hooks/useCrossSeasonEpisodeSearch";
 
-const TMDB_IMG = "https://image.tmdb.org/t/p/";
-const img = (path?: string | null, size: string = "w1280") =>
-  path ? `${TMDB_IMG}${size}${path}` : null;
-
 export default function TitlePage() {
   const { type, id } = useParams();
   const tmdbId = Number(id);
@@ -40,37 +36,36 @@ export default function TitlePage() {
     setEpisodeFilter("");
   }, [isTv, isError, data, initialSeasonNumber]);
 
-  const { seasonData, loadingSeason, seasonCache, setSeasonCache, resetCache } = useSeasonEpisodes({
+  const { seasonData, loadingSeason } = useSeasonEpisodes({
     tmdbId,
     enabled: isTv && !isError,
     seasonNumber,
   });
 
   useEffect(() => {
-    resetCache();
     setEpisodeFilter("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tmdbId, type]);
 
-  const { episodes, isCrossSeason, searchingAll, prefetchProgress } = useCrossSeasonEpisodeSearch({
-    tmdbId,
-    enabled: isTv && !isError,
-    seasonNumber,
-    seasonOptions,
-    seasonCache,
-    setSeasonCache,
-    seasonData,
-    episodeFilter,
-    concurrency: 3,
-  });
+  const { episodes, isCrossSeason, searchingAll, prefetchProgress } =
+    useCrossSeasonEpisodeSearch({
+      tmdbId,
+      enabled: isTv && !isError,
+      seasonNumber,
+      seasonData,
+      episodeFilter,
+    });
 
   const runtime = isMovie ? (data as TmdbMovie | null)?.runtime : undefined;
-  const numberOfSeasons = isTv ? (data as TmdbTv | null)?.number_of_seasons : undefined;
+  const numberOfSeasons = isTv
+    ? (data as TmdbTv | null)?.number_of_seasons
+    : undefined;
 
   if (loading || !data) {
     return (
       <div className="min-h-[100svh] bg-zinc-950 text-zinc-200">
-        <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-zinc-400">Loading…</div>
+        <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-zinc-400">
+          Loading…
+        </div>
       </div>
     );
   }
@@ -100,7 +95,12 @@ export default function TitlePage() {
       <div className="relative isolate min-h-[100svh]">
         {backdrop ? (
           <div className="pointer-events-none fixed inset-0 z-0">
-            <img src={backdrop} alt="" className="h-[100svh] w-full object-cover" loading="lazy" />
+            <img
+              src={backdrop}
+              alt=""
+              className="h-[100svh] w-full object-cover"
+              loading="lazy"
+            />
           </div>
         ) : (
           <div className="pointer-events-none fixed inset-0 z-0 bg-zinc-950" />
@@ -129,7 +129,12 @@ export default function TitlePage() {
               <div className="space-y-4">
                 <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-2xl backdrop-blur">
                   {poster ? (
-                    <img src={poster} alt={title} className="w-full object-cover" loading="lazy" />
+                    <img
+                      src={poster}
+                      alt={title}
+                      className="w-full object-cover"
+                      loading="lazy"
+                    />
                   ) : (
                     <div className="flex h-[460px] items-center justify-center text-white/50">
                       No poster
@@ -139,12 +144,17 @@ export default function TitlePage() {
 
                 <div className="flex flex-col gap-3">
                   {isMovie ? (
-                    <PrimaryLinkButton to={`/play/movie/${tmdbId}`}>▶ Play</PrimaryLinkButton>
+                    <PrimaryLinkButton to={`/play/movie/${tmdbId}`}>
+                      ▶ Play
+                    </PrimaryLinkButton>
                   ) : (
                     <SecondaryButton
                       onClick={() => {
                         const el = document.getElementById("episodes");
-                        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        el?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
                       }}
                     >
                       ☰ Episodes
@@ -155,18 +165,26 @@ export default function TitlePage() {
 
               <div className="space-y-4 pt-1">
                 <div className="space-y-2">
-                  <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{title}</h1>
+                  <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+                    {title}
+                  </h1>
 
                   <div className="flex flex-wrap items-center gap-2 text-sm text-white/70">
                     {year ? <Chip>{year}</Chip> : null}
                     {isMovie && runtime ? <Chip>{runtime} min</Chip> : null}
-                    {isTv && numberOfSeasons ? <Chip>{numberOfSeasons} seasons</Chip> : null}
+                    {isTv && numberOfSeasons ? (
+                      <Chip>{numberOfSeasons} seasons</Chip>
+                    ) : null}
                     {genres.slice(0, 4).map((g) => (
                       <Chip key={g}>{g}</Chip>
                     ))}
                   </div>
 
-                  {tagline ? <div className="max-w-2xl text-sm text-white/75">{tagline}</div> : null}
+                  {tagline ? (
+                    <div className="max-w-2xl text-sm text-white/75">
+                      {tagline}
+                    </div>
+                  ) : null}
 
                   <p className="max-w-2xl leading-relaxed text-white/85">
                     {(data as any)?.overview || "No overview."}
@@ -179,15 +197,21 @@ export default function TitlePage() {
               <section id="episodes" className="mt-12">
                 <div className="flex items-end justify-between gap-4">
                   <div>
-                    <div className="text-2xl font-semibold tracking-tight">Episodes</div>
-                    <div className="mt-1 text-sm text-white/60">Pick a season and choose an episode.</div>
+                    <div className="text-2xl font-semibold tracking-tight">
+                      Episodes
+                    </div>
+                    <div className="mt-1 text-sm text-white/60">
+                      Pick a season and choose an episode.
+                    </div>
                   </div>
                 </div>
 
                 <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4 backdrop-blur">
                   <div className="flex flex-col gap-3 md:flex-row md:items-center">
                     <div className="flex items-center gap-3">
-                      <div className="text-sm font-semibold text-white/80">Season</div>
+                      <div className="text-sm font-semibold text-white/80">
+                        Season
+                      </div>
 
                       <SeasonDropdown
                         seasons={seasonOptions}
@@ -205,7 +229,10 @@ export default function TitlePage() {
                       />
                       <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/40">
                         {searchingAll && prefetchProgress.total > 0
-                          ? `${episodes.length} • ${Math.min(prefetchProgress.loaded, prefetchProgress.total)}/${prefetchProgress.total}`
+                          ? `${episodes.length} • ${Math.min(
+                              prefetchProgress.loaded,
+                              prefetchProgress.total
+                            )}/${prefetchProgress.total}`
                           : loadingSeason
                           ? "Loading…"
                           : `${episodes.length}`}
@@ -217,14 +244,19 @@ export default function TitlePage() {
                     <div className="mt-3 text-xs text-white/45">
                       Searching all seasons
                       {prefetchProgress.total > 0
-                        ? ` (${Math.min(prefetchProgress.loaded, prefetchProgress.total)}/${prefetchProgress.total} loaded)…`
+                        ? ` (${Math.min(
+                            prefetchProgress.loaded,
+                            prefetchProgress.total
+                          )}/${prefetchProgress.total} loaded)…`
                         : "…"}
                     </div>
                   ) : null}
                 </div>
 
                 <div className="mt-5 relative">
-                  <div className={loadingSeason ? "opacity-50 pointer-events-none" : ""}>
+                  <div
+                    className={loadingSeason ? "opacity-50 pointer-events-none" : ""}
+                  >
                     {(seasonData as ErrorLike | null)?.__error ? (
                       <div className="rounded-2xl border border-white/10 bg-black/20 p-6 text-sm text-red-200">
                         Failed to load season.
@@ -232,13 +264,13 @@ export default function TitlePage() {
                     ) : episodes?.length ? (
                       <div className="space-y-3">
                         {episodes.map((ep) => {
-                          const still = img(ep.still_path, "w500");
-                          const epSeason = ep.__season ?? seasonNumber;
+                          const epSeason = ep.season;
+                          const still = ep.still;
 
                           return (
                             <Link
                               key={`${epSeason}-${ep.id}`}
-                              to={`/play/tv/${tmdbId}/${epSeason}/${ep.episode_number}`}
+                              to={`/play/tv/${tmdbId}/${epSeason}/${ep.episode}`}
                               className="group block rounded-2xl border border-white/10 bg-black/20 p-3 backdrop-blur transition hover:border-white/20 hover:bg-black/30"
                             >
                               <div className="flex gap-4">
@@ -257,7 +289,7 @@ export default function TitlePage() {
                                   )}
                                   <div className="absolute left-2 top-2 rounded-full border border-white/15 bg-black/50 px-2 py-1 text-[11px] text-white/85">
                                     {isCrossSeason ? `S${epSeason} · ` : ""}
-                                    E{ep.episode_number}
+                                    E{ep.episode}
                                   </div>
                                 </div>
 
@@ -265,7 +297,7 @@ export default function TitlePage() {
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
                                       <div className="line-clamp-1 text-sm font-semibold text-white">
-                                        {ep.name || `Episode ${ep.episode_number}`}
+                                        {ep.name || `Episode ${ep.episode}`}
                                       </div>
                                       <div className="mt-1 line-clamp-2 text-xs text-white/65">
                                         {ep.overview || "—"}
@@ -278,7 +310,9 @@ export default function TitlePage() {
                                   </div>
 
                                   {ep.air_date ? (
-                                    <div className="mt-2 text-[11px] text-white/45">{ep.air_date}</div>
+                                    <div className="mt-2 text-[11px] text-white/45">
+                                      {ep.air_date}
+                                    </div>
                                   ) : null}
                                 </div>
                               </div>

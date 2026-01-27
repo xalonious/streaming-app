@@ -127,3 +127,61 @@ export async function getTvSeasonDetails(tmdbId: number, season: number) {
     );
   }
 }
+
+export async function getTvAllEpisodes(tmdbId: number) {
+  const tv = await getTvDetails(tmdbId);
+
+  const seasons: Array<{ season_number: number; id?: number; name?: string }> =
+    Array.isArray(tv?.seasons) ? tv.seasons : [];
+
+  if (seasons.length === 0) {
+    return {
+      tmdbId,
+      tvId: tv?.id ?? tmdbId,
+      episodes: [],
+      totalEpisodes: 0,
+      totalSeasons: 0,
+    };
+  }
+
+  try {
+    const seasonDetails = await Promise.all(
+      seasons.map(async (s) => {
+        const seasonNumber = Number(s.season_number);
+        const { data } = await client.get(
+          `/tv/${tmdbId}/season/${seasonNumber}`
+        );
+        return { seasonNumber, data };
+      })
+    );
+
+    const episodes = seasonDetails.flatMap(({ seasonNumber, data }) => {
+      const eps = Array.isArray(data?.episodes) ? data.episodes : [];
+      return eps.map((ep: any) => ({
+        tvId: tmdbId,
+        season: seasonNumber,
+        episode: ep.episode_number,
+        id: ep.id,
+        name: ep.name ?? "",
+        overview: ep.overview ?? "",
+        air_date: ep.air_date ?? null,
+        still: ep.still_path ? `${IMG_BASE}${ep.still_path}` : null,
+        runtime: ep.runtime ?? null,
+      }));
+    });
+
+    episodes.sort((a, b) => a.season - b.season || a.episode - b.episode);
+
+    return {
+      tmdbId,
+      tvId: tv?.id ?? tmdbId,
+      episodes,
+      totalEpisodes: episodes.length,
+      totalSeasons: seasons.length,
+    };
+  } catch (err: any) {
+    throw ServiceError.internalServerError(
+      `TMDB all episodes failed: ${err.message}`
+    );
+  }
+}
