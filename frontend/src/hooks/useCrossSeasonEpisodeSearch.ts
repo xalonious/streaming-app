@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getTvAllEpisodes } from "../api/details";
 
@@ -36,18 +37,33 @@ type TmdbSeasonEpisode = {
 
 type TmdbSeason = { episodes?: TmdbSeasonEpisode[] };
 
+type SeasonCache = Record<number, TmdbSeason | ErrorLike>;
+
+const TMDB_STILL_BASE_RE = /^https?:\/\/image\.tmdb\.org\/t\/p\/(?:w\d+|original)/i;
+
+function toStillPath(stillUrl: string | null | undefined): string | null {
+  if (!stillUrl) return null;
+  const stripped = stillUrl.replace(TMDB_STILL_BASE_RE, "");
+  if (!stripped || stripped === stillUrl) {
+    return null;
+  }
+  return stripped.startsWith("/") ? stripped : `/${stripped}`;
+}
+
 export function useCrossSeasonEpisodeSearch({
   tmdbId,
   enabled,
   seasonNumber,
   seasonData,
   episodeFilter,
+  setSeasonCache,
 }: {
   tmdbId: number;
   enabled: boolean;
   seasonNumber: number;
   seasonData: TmdbSeason | ErrorLike | null;
   episodeFilter: string;
+  setSeasonCache?: Dispatch<SetStateAction<SeasonCache>>;
 }) {
   const [searchingAll, setSearchingAll] = useState(false);
   const [prefetchProgress, setPrefetchProgress] = useState<Progress>({
@@ -76,7 +92,46 @@ export function useCrossSeasonEpisodeSearch({
       try {
         const data = (await getTvAllEpisodes(tmdbId)) as TvAllEpisodesResponse;
         if (cancelled || runIdRef.current !== runId) return;
-        setAllEpisodes(Array.isArray(data?.episodes) ? data.episodes : []);
+
+        const eps = Array.isArray(data?.episodes) ? data.episodes : [];
+        setAllEpisodes(eps);
+
+        if (setSeasonCache && eps.length) {
+          const bySeason: Record<number, TmdbSeasonEpisode[]> = {};
+
+          for (const ep of eps) {
+            const sn = ep.season;
+            if (!sn || sn < 0) continue;
+            (bySeason[sn] ??= []).push({
+              id: ep.id,
+              name: ep.name ?? "",
+              overview: ep.overview ?? "",
+              still_path: toStillPath(ep.still),
+              episode_number: ep.episode,
+              air_date: ep.air_date ?? undefined,
+              runtime: ep.runtime ?? null,
+            });
+          }
+
+          for (const sn of Object.keys(bySeason)) {
+            bySeason[Number(sn)].sort((a, b) => a.episode_number - b.episode_number);
+          }
+
+          setSeasonCache((prev) => {
+            let changed = false;
+            const next: SeasonCache = { ...prev };
+
+            for (const [snStr, episodes] of Object.entries(bySeason)) {
+              const sn = Number(snStr);
+              if (next[sn]) continue; 
+              next[sn] = { episodes };
+              changed = true;
+            }
+
+            return changed ? next : prev;
+          });
+        }
+
         setPrefetchProgress({ loaded: 1, total: 1 });
       } catch {
         if (cancelled || runIdRef.current !== runId) return;
@@ -91,7 +146,7 @@ export function useCrossSeasonEpisodeSearch({
     return () => {
       cancelled = true;
     };
-  }, [enabled, episodeFilter, tmdbId, allEpisodes, loadError]);
+  }, [enabled, episodeFilter, tmdbId, allEpisodes, loadError, setSeasonCache]);
 
   const { episodes, isCrossSeason } = useMemo((): {
     episodes: EpisodeResult[];

@@ -3,7 +3,12 @@ import { Link, useParams } from "react-router-dom";
 import { Chip } from "../components/Chip";
 import { PrimaryLinkButton, SecondaryButton } from "../components/Buttons";
 import { SeasonDropdown } from "../components/SeasonDropdown";
-import { useTitleDetails, type TmdbMovie, type TmdbTv, type ErrorLike } from "../hooks/useTitleDetails";
+import {
+  useTitleDetails,
+  type TmdbMovie,
+  type TmdbTv,
+  type ErrorLike,
+} from "../hooks/useTitleDetails";
 import { useSeasonEpisodes } from "../hooks/useSeasonEpisodes";
 import { useCrossSeasonEpisodeSearch } from "../hooks/useCrossSeasonEpisodeSearch";
 
@@ -36,7 +41,7 @@ export default function TitlePage() {
     setEpisodeFilter("");
   }, [isTv, isError, data, initialSeasonNumber]);
 
-  const { seasonData, loadingSeason } = useSeasonEpisodes({
+  const { seasonData, loadingSeason, setSeasonCache } = useSeasonEpisodes({
     tmdbId,
     enabled: isTv && !isError,
     seasonNumber,
@@ -53,6 +58,7 @@ export default function TitlePage() {
       seasonNumber,
       seasonData,
       episodeFilter,
+      setSeasonCache,
     });
 
   const runtime = isMovie ? (data as TmdbMovie | null)?.runtime : undefined;
@@ -255,7 +261,9 @@ export default function TitlePage() {
 
                 <div className="mt-5 relative">
                   <div
-                    className={loadingSeason ? "opacity-50 pointer-events-none" : ""}
+                    className={
+                      loadingSeason ? "opacity-50 pointer-events-none" : ""
+                    }
                   >
                     {(seasonData as ErrorLike | null)?.__error ? (
                       <div className="rounded-2xl border border-white/10 bg-black/20 p-6 text-sm text-red-200">
