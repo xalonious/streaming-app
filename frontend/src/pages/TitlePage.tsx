@@ -126,7 +126,6 @@ export default function TitlePage() {
 
             <div className="flex items-center gap-2">
               <Chip>TMDB</Chip>
-              <Chip>Vidking</Chip>
             </div>
           </header>
 
