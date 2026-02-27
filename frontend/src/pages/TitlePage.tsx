@@ -58,6 +58,28 @@ export default function TitlePage() {
   const [showFullCast, setShowFullCast] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(max-width: 639px)").matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setIsMobile(mq.matches);
+
+    update();
+
+    if (typeof (mq as any).addEventListener === "function") {
+      mq.addEventListener("change", update);
+      return () => mq.removeEventListener("change", update);
+    } else {
+      mq.addListener(update);
+      return () => mq.removeListener(update);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isTv || isError || !data) return;
     setSeasonNumber(initialSeasonNumber ?? 1);
@@ -182,7 +204,7 @@ export default function TitlePage() {
                 top: "50%",
                 left: "50%",
                 width: "120vw",
-                height: "67.5vw", 
+                height: "67.5vw",
                 minWidth: "100vw",
                 minHeight: "100vh",
                 transform: "translate(-50%, -50%)",
@@ -292,7 +314,7 @@ export default function TitlePage() {
                   </p>
                 </div>
 
-                {fullCast.length > 0 ? (
+                {!isMobile && fullCast.length > 0 ? (
                   <section>
                     <div className="flex items-end justify-between gap-4">
                       <div className="text-xl font-semibold tracking-tight">
