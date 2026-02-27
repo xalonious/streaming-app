@@ -23,6 +23,16 @@ type CastPerson = {
 
 const CAST_PREVIEW_COUNT = 14;
 
+function pickBestTrailer(videos: any[]) {
+  const yt = (videos ?? []).filter((v) => v?.site === "YouTube" && v?.key);
+  return (
+    yt.find((v) => v.type === "Trailer" && v.official) ||
+    yt.find((v) => v.type === "Trailer") ||
+    yt[0] ||
+    null
+  );
+}
+
 export default function TitlePage() {
   const { type, id } = useParams();
   const tmdbId = Number(id);
@@ -46,6 +56,7 @@ export default function TitlePage() {
   const [seasonNumber, setSeasonNumber] = useState<number>(1);
   const [episodeFilter, setEpisodeFilter] = useState("");
   const [showFullCast, setShowFullCast] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
 
   useEffect(() => {
     if (!isTv || isError || !data) return;
@@ -62,7 +73,19 @@ export default function TitlePage() {
   useEffect(() => {
     setEpisodeFilter("");
     setShowFullCast(false);
+    setShowTrailer(false);
   }, [tmdbId, type]);
+
+  useEffect(() => {
+    if (!showTrailer) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowTrailer(false);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showTrailer]);
 
   const { episodes, isCrossSeason, searchingAll, prefetchProgress } =
     useCrossSeasonEpisodeSearch({
@@ -78,12 +101,27 @@ export default function TitlePage() {
   const numberOfSeasons = isTv
     ? (data as TmdbTv | null)?.number_of_seasons
     : undefined;
-    
+
   const rating =
     typeof (data as any)?.vote_average === "number" &&
     (data as any).vote_average > 0
       ? (data as any).vote_average.toFixed(1)
       : null;
+
+  const trailer = useMemo(() => {
+    const results = (data as any)?.videos?.results ?? [];
+    return pickBestTrailer(results);
+  }, [data]);
+
+  const trailerEmbedUrl = useMemo(() => {
+    if (!trailer?.key) return null;
+    return `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&mute=1&controls=0&rel=0&playsinline=1&loop=1&playlist=${trailer.key}&modestbranding=1&iv_load_policy=3`;
+  }, [trailer]);
+
+  const trailerModalUrl = useMemo(() => {
+    if (!trailer?.key) return null;
+    return `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&mute=0&controls=1&rel=0&playsinline=1&modestbranding=1`;
+  }, [trailer]);
 
   const fullCast = useMemo(() => {
     const raw = ((data as any)?.credits?.cast ?? []) as CastPerson[];
@@ -131,18 +169,37 @@ export default function TitlePage() {
   return (
     <div className="min-h-[100svh] bg-black text-white">
       <div className="relative isolate min-h-[100svh]">
-        {backdrop ? (
-          <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="pointer-events-none fixed inset-0 z-0">
+          {trailerEmbedUrl ? (
+            <iframe
+              src={trailerEmbedUrl}
+              title="Trailer background"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              referrerPolicy="strict-origin-when-cross-origin"
+              className="h-full w-full"
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                width: "120vw",
+                height: "67.5vw", 
+                minWidth: "100vw",
+                minHeight: "100vh",
+                transform: "translate(-50%, -50%)",
+                border: 0,
+              }}
+            />
+          ) : backdrop ? (
             <img
               src={backdrop}
               alt=""
               className="h-[100svh] w-full object-cover"
               loading="lazy"
             />
-          </div>
-        ) : (
-          <div className="pointer-events-none fixed inset-0 z-0 bg-zinc-950" />
-        )}
+          ) : (
+            <div className="h-[100svh] w-full bg-zinc-950" />
+          )}
+        </div>
 
         <div className="pointer-events-none fixed inset-0 z-10 bg-gradient-to-b from-black/50 via-black/60 to-black" />
         <div className="pointer-events-none fixed inset-0 z-10 bg-gradient-to-r from-black via-black/70 to-transparent" />
@@ -198,6 +255,12 @@ export default function TitlePage() {
                       ☰ Episodes
                     </SecondaryButton>
                   )}
+
+                  {trailerModalUrl ? (
+                    <SecondaryButton onClick={() => setShowTrailer(true)}>
+                      ▶ Trailer
+                    </SecondaryButton>
+                  ) : null}
                 </div>
               </div>
 
@@ -433,6 +496,41 @@ export default function TitlePage() {
           </main>
         </div>
       </div>
+
+      {showTrailer && trailerModalUrl ? (
+        <div
+          className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm"
+          onClick={() => setShowTrailer(false)}
+        >
+          <div
+            className="mx-auto mt-24 w-[92vw] max-w-4xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="min-w-0 text-sm text-white/80">
+                <div className="line-clamp-1">{trailer?.name ?? "Trailer"}</div>
+              </div>
+
+              <button
+                className="shrink-0 rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-sm text-white/80 hover:bg-black/60"
+                onClick={() => setShowTrailer(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="aspect-video overflow-hidden rounded-2xl border border-white/10 bg-black">
+              <iframe
+                src={trailerModalUrl}
+                title={trailer?.name ?? "Trailer"}
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                allowFullScreen
+                className="h-full w-full"
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -87,7 +87,7 @@ export async function getTrending(
 export async function getMovieDetails(tmdbId: number) {
   try {
     const { data } = await client.get(`/movie/${tmdbId}`, {
-      params: { append_to_response: "credits" },
+      params: { append_to_response: "credits,videos" },
     });
     return data;
   } catch (err: any) {
@@ -103,7 +103,7 @@ export async function getMovieDetails(tmdbId: number) {
 export async function getTvDetails(tmdbId: number) {
   try {
     const { data } = await client.get(`/tv/${tmdbId}`, {
-      params: { append_to_response: "credits" },
+      params: { append_to_response: "credits,videos" },
     });
     return data;
   } catch (err: any) {

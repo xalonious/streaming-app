@@ -39,7 +39,7 @@ export function SecondaryButton({
       type={type}
       onClick={onClick}
       className={[
-        "inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-black/30 px-4 py-2.5 text-sm font-semibold text-white/90 backdrop-blur hover:bg-black/45",
+        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/15 bg-black/30 px-4 py-2.5 text-sm font-semibold text-white/90 backdrop-blur hover:bg-black/45",
         className,
       ].join(" ")}
     >
