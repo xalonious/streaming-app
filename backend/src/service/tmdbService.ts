@@ -86,7 +86,9 @@ export async function getTrending(
 
 export async function getMovieDetails(tmdbId: number) {
   try {
-    const { data } = await client.get(`/movie/${tmdbId}`);
+    const { data } = await client.get(`/movie/${tmdbId}`, {
+      params: { append_to_response: "credits" },
+    });
     return data;
   } catch (err: any) {
     if (err?.response?.status === 404) {
@@ -100,7 +102,9 @@ export async function getMovieDetails(tmdbId: number) {
 
 export async function getTvDetails(tmdbId: number) {
   try {
-    const { data } = await client.get(`/tv/${tmdbId}`);
+    const { data } = await client.get(`/tv/${tmdbId}`, {
+      params: { append_to_response: "credits" },
+    });
     return data;
   } catch (err: any) {
     if (err?.response?.status === 404) {

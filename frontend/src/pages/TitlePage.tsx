@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Chip } from "../components/Chip";
 import { PrimaryLinkButton, SecondaryButton } from "../components/Buttons";
 import { SeasonDropdown } from "../components/SeasonDropdown";
+import { ActorCard } from "../components/ActorCard";
 import {
   useTitleDetails,
   type TmdbMovie,
@@ -11,6 +12,16 @@ import {
 } from "../hooks/useTitleDetails";
 import { useSeasonEpisodes } from "../hooks/useSeasonEpisodes";
 import { useCrossSeasonEpisodeSearch } from "../hooks/useCrossSeasonEpisodeSearch";
+
+type CastPerson = {
+  id: number;
+  name: string;
+  character?: string;
+  profile_path?: string | null;
+  order?: number;
+};
+
+const CAST_PREVIEW_COUNT = 14;
 
 export default function TitlePage() {
   const { type, id } = useParams();
@@ -34,6 +45,7 @@ export default function TitlePage() {
 
   const [seasonNumber, setSeasonNumber] = useState<number>(1);
   const [episodeFilter, setEpisodeFilter] = useState("");
+  const [showFullCast, setShowFullCast] = useState(false);
 
   useEffect(() => {
     if (!isTv || isError || !data) return;
@@ -49,6 +61,7 @@ export default function TitlePage() {
 
   useEffect(() => {
     setEpisodeFilter("");
+    setShowFullCast(false);
   }, [tmdbId, type]);
 
   const { episodes, isCrossSeason, searchingAll, prefetchProgress } =
@@ -65,6 +78,19 @@ export default function TitlePage() {
   const numberOfSeasons = isTv
     ? (data as TmdbTv | null)?.number_of_seasons
     : undefined;
+
+  const fullCast = useMemo(() => {
+    const raw = ((data as any)?.credits?.cast ?? []) as CastPerson[];
+    return raw.slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  }, [data]);
+
+  const previewCast = useMemo(
+    () => fullCast.slice(0, CAST_PREVIEW_COUNT),
+    [fullCast]
+  );
+
+  const castToRender = showFullCast ? fullCast : previewCast;
+  const hasMoreCast = fullCast.length > CAST_PREVIEW_COUNT;
 
   if (loading || !data) {
     return (
@@ -168,7 +194,7 @@ export default function TitlePage() {
                 </div>
               </div>
 
-              <div className="space-y-4 pt-1">
+              <div className="space-y-6 pt-1">
                 <div className="space-y-2">
                   <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
                     {title}
@@ -195,6 +221,54 @@ export default function TitlePage() {
                     {(data as any)?.overview || "No overview."}
                   </p>
                 </div>
+
+                {fullCast.length > 0 ? (
+                  <section>
+                    <div className="flex items-end justify-between gap-4">
+                      <div className="text-xl font-semibold tracking-tight">
+                        Cast
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="text-xs text-white/50">
+                          {showFullCast
+                            ? `${fullCast.length} total`
+                            : `${Math.min(CAST_PREVIEW_COUNT, fullCast.length)} shown`}
+                        </div>
+
+                        {hasMoreCast ? (
+                          <button
+                            onClick={() => setShowFullCast((v) => !v)}
+                            className="text-xs text-white/75 hover:text-white transition underline underline-offset-4"
+                          >
+                            {showFullCast ? "Show less" : "View full cast"}
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div
+                      className={[
+                        "mt-3 overflow-hidden transition-[max-height,opacity] duration-300 ease-out",
+                        showFullCast ? "max-h-[2000px] opacity-100" : "max-h-[420px] opacity-100",
+                      ].join(" ")}
+                    >
+                      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
+                        {castToRender.map((p) => (
+                          <ActorCard
+                            key={p.id}
+                            actor={{
+                              id: p.id,
+                              name: p.name,
+                              character: p.character,
+                              profile_path: p.profile_path,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                ) : null}
               </div>
             </div>
 
