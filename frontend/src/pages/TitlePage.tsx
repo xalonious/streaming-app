@@ -78,6 +78,12 @@ export default function TitlePage() {
   const numberOfSeasons = isTv
     ? (data as TmdbTv | null)?.number_of_seasons
     : undefined;
+    
+  const rating =
+    typeof (data as any)?.vote_average === "number" &&
+    (data as any).vote_average > 0
+      ? (data as any).vote_average.toFixed(1)
+      : null;
 
   const fullCast = useMemo(() => {
     const raw = ((data as any)?.credits?.cast ?? []) as CastPerson[];
@@ -151,6 +157,7 @@ export default function TitlePage() {
             </Link>
 
             <div className="flex items-center gap-2">
+              {rating ? <Chip>⭐ {rating}</Chip> : null}
               <Chip>TMDB</Chip>
             </div>
           </header>
@@ -233,7 +240,10 @@ export default function TitlePage() {
                         <div className="text-xs text-white/50">
                           {showFullCast
                             ? `${fullCast.length} total`
-                            : `${Math.min(CAST_PREVIEW_COUNT, fullCast.length)} shown`}
+                            : `${Math.min(
+                                CAST_PREVIEW_COUNT,
+                                fullCast.length
+                              )} shown`}
                         </div>
 
                         {hasMoreCast ? (
@@ -250,7 +260,9 @@ export default function TitlePage() {
                     <div
                       className={[
                         "mt-3 overflow-hidden transition-[max-height,opacity] duration-300 ease-out",
-                        showFullCast ? "max-h-[2000px] opacity-100" : "max-h-[420px] opacity-100",
+                        showFullCast
+                          ? "max-h-[2000px] opacity-100"
+                          : "max-h-[420px] opacity-100",
                       ].join(" ")}
                     >
                       <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
