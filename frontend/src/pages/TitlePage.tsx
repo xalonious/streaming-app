@@ -64,6 +64,23 @@ export default function TitlePage() {
   });
 
   useEffect(() => {
+    if (loading) {
+      document.title = "Loading...";
+      return;
+    }
+
+    if (title) {
+      document.title = year ? `${title} (${year})` : title;
+      return;
+    }
+
+    document.title = "";
+    return () => {
+      document.title = "";
+    };
+  }, [loading, title, year]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
     const mq = window.matchMedia("(max-width: 639px)");

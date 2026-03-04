@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getMovieStream, getTvStream } from "../api/stream";
+import { useTitleDetails } from "../hooks/useTitleDetails";
 
 export default function PlayerPage() {
   const nav = useNavigate();
@@ -9,16 +10,44 @@ export default function PlayerPage() {
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const id = params.id ? Number(params.id) : NaN;
+  const season = params.season ? Number(params.season) : NaN;
+  const episode = params.episode ? Number(params.episode) : NaN;
+
+  const playbackType = useMemo(() => {
+    if (Number.isFinite(season) && Number.isFinite(episode)) return "tv";
+    if (params.type === "tv" || params.type === "movie") return params.type;
+    return "movie";
+  }, [params.type, season, episode]);
+
+  const { title } = useTitleDetails(Number.isFinite(id) ? id : NaN, playbackType);
+
+  useEffect(() => {
+  if (!title) {
+    document.title = "Loading...";
+    return;
+  }
+
+  if (playbackType === "tv" && Number.isFinite(season) && Number.isFinite(episode)) {
+    const s = String(season).padStart(2, "0");
+    const e = String(episode).padStart(2, "0");
+    document.title = `${title} • S${s}E${e}`;
+    return;
+  }
+
+  document.title = title;
+
+  return () => {
+    document.title = "Streaming";
+  };
+}, [title, playbackType, season, episode]);
+
   useEffect(() => {
     let cancelled = false;
 
     async function run() {
       setUrl(null);
       setError(null);
-
-      const id = params.id ? Number(params.id) : NaN;
-      const season = params.season ? Number(params.season) : NaN;
-      const episode = params.episode ? Number(params.episode) : NaN;
 
       try {
         if (Number.isFinite(id) && Number.isFinite(season) && Number.isFinite(episode)) {
@@ -43,7 +72,7 @@ export default function PlayerPage() {
     return () => {
       cancelled = true;
     };
-  }, [params.id, params.season, params.episode]);
+  }, [id, season, episode]);
 
   return (
     <div className="fixed inset-0 bg-black">
