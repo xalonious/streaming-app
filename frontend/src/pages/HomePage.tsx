@@ -27,6 +27,9 @@ function saveRecent(list: string[]) {
 }
 
 export default function HomePage() {
+  useEffect(() => {
+    document.title = "Streaming";
+  }, []);
   const nav = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const trendGridRef = useRef<HTMLDivElement | null>(null);
