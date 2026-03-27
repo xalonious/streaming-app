@@ -19,7 +19,7 @@ export const searchTmdb = async (
   q: string,
   type: "multi" | "movie" | "tv" = "multi"
 ) => {
-  const res = await apiClient.get<SearchResponse>("/api/tmdb/search", {
+  const res = await apiClient.get<SearchResponse>("/tmdb/search", {
     params: { q, type },
   });
   return res.data;
@@ -33,7 +33,7 @@ export const trendingTmdb = async (
   type: "all" | "movie" | "tv" = "all",
   window: "day" | "week" = "day"
 ) => {
-  const res = await apiClient.get<TrendingResponse>("/api/tmdb/trending", {
+  const res = await apiClient.get<TrendingResponse>("/tmdb/trending", {
     params: { type, window },
   });
   return res.data;
