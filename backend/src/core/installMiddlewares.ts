@@ -8,6 +8,9 @@ dotenv.config();
 
 export default function installMiddlewares(app: Express) {
   app.use(helmet());
-  app.use(loggingMiddleware)
-  app.use(express.json());
+
+  if(process.env.NODE_ENV === 'development') {
+    app.use(loggingMiddleware)
+  }
+    app.use(express.json());
 }
