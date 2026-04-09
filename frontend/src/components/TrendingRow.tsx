@@ -19,7 +19,7 @@ export function TrendingRow({ items, onOpen, trendWindow, onTrendWindowChange }:
         <div className="flex items-center gap-3">
           <div className="w-1 h-5 rounded-full bg-[#e50914]" />
           <h2 className="text-white font-bold text-base sm:text-lg">
-            Trending <span className="text-zinc-400 font-normal">{trendWindow === "day" ? "Today" : "This Week"}</span>
+            Trending <span className="text-zinc-400 font-normal">Today</span>
           </h2>
         </div>
         <div className="flex items-center gap-1 p-1 bg-white/[0.06] rounded-xl border border-white/10">
