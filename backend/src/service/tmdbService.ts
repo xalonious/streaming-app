@@ -15,6 +15,7 @@ const client = axios.create({
 });
 
 const IMG_BASE = "https://image.tmdb.org/t/p/w500";
+const IMG_BASE_ORIGINAL = "https://image.tmdb.org/t/p/original";
 
 function normalizeSearchResult(r: any) {
   const type = (r.media_type ?? (r.title ? "movie" : "tv")) as "movie" | "tv";
@@ -26,7 +27,9 @@ function normalizeSearchResult(r: any) {
       | string
       | null,
     poster: r.poster_path ? `${IMG_BASE}${r.poster_path}` : null,
+    backdrop: r.backdrop_path ? `${IMG_BASE_ORIGINAL}${r.backdrop_path}` : null,
     overview: r.overview ?? "",
+    vote_average: typeof r.vote_average === "number" ? Math.round(r.vote_average * 10) / 10 : null,
   };
 }
 

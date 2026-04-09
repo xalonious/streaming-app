@@ -8,7 +8,9 @@ export interface SearchResult {
   title: string;
   year: string | null;
   poster: string | null;
+  backdrop: string | null;
   overview: string;
+  vote_average: number | null;
 }
 
 export interface SearchResponse {
