@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { trendingTmdb, type SearchResult } from "../api/tmdb";
 import { Navbar } from "../components/Navbar";
 import { SearchOverlay } from "../components/SearchOverlay";
 import { HeroSection } from "../components/HeroSection";
 import { Top10Carousel } from "../components/Top10Carousel";
 import { TrendingRow } from "../components/TrendingRow";
-import { useTmdbTrending } from "../hooks/useTmdbTrending";
 
 export default function HomePage() {
   const nav = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
-  const [trendWindow, setTrendWindow] = useState<"day" | "week">("day");
 
-  const { trending: mainItems, loading: mainLoading } = useTmdbTrending({ type: "multi", window: "day", enabled: true });
-  const { trending: trendingItems } = useTmdbTrending({ type: trendWindow === "day" ? "movie" : "tv", window: "day", enabled: true });
+  const [mainItems, setMainItems] = useState<SearchResult[]>([]);
+  const [mainLoading, setMainLoading] = useState(true);
+
+  const [trendingItems, setTrendingItems] = useState<SearchResult[]>([]);
+  const [trendWindow, setTrendWindow] = useState<"day" | "week">("day");
 
   useEffect(() => { document.title = "Streaming"; }, []);
 
@@ -28,7 +30,24 @@ export default function HomePage() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const hero = mainItems[0];
+  useEffect(() => {
+    let cancelled = false;
+    trendingTmdb("all", "day")
+      .then((data) => { if (!cancelled) setMainItems(data.results ?? []); })
+      .catch(() => { if (!cancelled) setMainItems([]); })
+      .finally(() => { if (!cancelled) setMainLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const type = trendWindow === "day" ? "movie" : "tv";
+    trendingTmdb(type, "day")
+      .then((data) => { if (!cancelled) setTrendingItems(data.results ?? []); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [trendWindow]);
+
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
@@ -37,11 +56,11 @@ export default function HomePage() {
 
       {mainLoading ? (
         <div className="w-full bg-black animate-pulse" style={{ height: "91vh", minHeight: 500 }} />
-      ) : hero ? (
+      ) : mainItems.length > 0 ? (
         <HeroSection
-          item={hero}
-          onPlay={() => nav(`/title/${hero.type}/${hero.id}`)}
-          onDetails={() => nav(`/title/${hero.type}/${hero.id}`)}
+          items={mainItems}
+          onPlay={(item) => nav(`/title/${item.type}/${item.id}`)}
+          onDetails={(item) => nav(`/title/${item.type}/${item.id}`)}
         />
       ) : null}
 
