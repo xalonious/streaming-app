@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { type SearchResult } from "../api/tmdb";
 import useDebounce from "../hooks/useDebounce";
 import { useTmdbSearch } from "../hooks/useTmdbSearch";
+import { SearchIcon, CloseIcon, PlayIcon, InfoIcon, StarIcon } from "./Icons";
 import { useRecentQueries } from "../hooks/useRecentQueries";
 
 const STORAGE_KEY = "xalonstream:recentQueries";
@@ -82,7 +83,6 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   return (
     <>
       <style>{`@keyframes slideInRow { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }`}</style>
-
       <div
         onClick={onClose}
         className="fixed inset-0 flex items-center justify-center px-4"
@@ -118,7 +118,6 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                     <path d="m6 9 6 6 6-6"/>
                   </svg>
                 </button>
-
                 {createPortal(
                   <div
                     className="fixed rounded-xl overflow-hidden border border-white/[0.12] bg-[#1e1e1e]"
@@ -151,23 +150,17 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                   document.body
                 )}
               </div>
-
               <button
                 onClick={onClose}
                 className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full text-zinc-400 hover:text-white transition-colors border-none cursor-pointer"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <path d="M18 6 6 18M6 6l12 12"/>
-                </svg>
+                <CloseIcon size={14} />
               </button>
             </div>
           </div>
-
           <div className="px-5 pb-3">
             <div className="flex items-center gap-2.5 bg-[#0d0d0d] rounded-[14px] px-3.5 py-2.5 border border-white/10 focus-within:border-white/25 transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2" strokeLinecap="round">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
+              <SearchIcon size={16} />
               <input
                 ref={inputRef}
                 value={q}
@@ -177,16 +170,12 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
               />
               {q && (
                 <button onClick={() => setQ("")} className="text-zinc-500 hover:text-white transition-colors bg-transparent border-none cursor-pointer p-0 flex">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <path d="M18 6 6 18M6 6l12 12"/>
-                  </svg>
+                  <CloseIcon size={14} />
                 </button>
               )}
             </div>
           </div>
-
           <div className="max-h-[58vh] overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#2a2a2a transparent" }}>
-
             {!q && recent.length > 0 && (
               <div className="px-5 py-3 border-t border-white/[0.06]">
                 <div className="flex items-center justify-between mb-2.5">
@@ -216,7 +205,6 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
             {!loading && trimmed.length >= 2 && results.length === 0 && (
               <div className="py-10 text-center text-sm text-zinc-500">No results found.</div>
             )}
-
             <div key={resultsVersion}>
               {results.map((item, i) => {
                 const key = `${item.type}:${item.id}`;
@@ -244,7 +232,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                           {item.vote_average && (
                             <><span className="text-zinc-600">|</span>
                             <span className="flex items-center gap-1">
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="#e50914"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                              <StarIcon />
                               {item.vote_average.toFixed(1)}
                             </span></>
                           )}
@@ -257,7 +245,6 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
                       </span>
                     </button>
-
                     <div
                       className="overflow-hidden transition-all duration-300"
                       style={{ maxHeight: isExpanded ? 200 : 0, opacity: isExpanded ? 1 : 0 }}
@@ -271,14 +258,14 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                             onClick={() => handleNavigate(item)}
                             className="flex items-center gap-1.5 bg-white text-black font-bold text-xs rounded-[10px] px-4 py-1.5 cursor-pointer border-none hover:bg-zinc-100 transition-colors"
                           >
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                            <PlayIcon size={11} />
                             Play
                           </button>
                           <button
                             onClick={() => handleNavigate(item)}
                             className="flex items-center gap-1.5 bg-white/10 text-white font-semibold text-xs rounded-[10px] px-4 py-1.5 cursor-pointer border border-white/10 hover:bg-white/20 transition-colors"
                           >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                            <InfoIcon />
                             See more
                           </button>
                         </div>

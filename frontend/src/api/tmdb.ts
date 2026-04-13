@@ -40,3 +40,13 @@ export const trendingTmdb = async (
   });
   return res.data;
 };
+
+export const recommendationsTmdb = async (
+  type: "movie" | "tv",
+  tmdbId: number
+) => {
+  const res = await apiClient.get<{ results: SearchResult[] }>(
+    `/tmdb/${type}/${tmdbId}/recommendations`
+  );
+  return res.data;
+};

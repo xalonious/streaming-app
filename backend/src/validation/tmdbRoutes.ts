@@ -14,6 +14,11 @@ export const tmdbIdParamsSchema = Joi.object({
   tmdbId: Joi.number().integer().positive().required(),
 }).unknown(false);
 
+export const tmdbRecommendationsParamsSchema = Joi.object({
+  type: Joi.string().valid("movie", "tv").required(),
+  tmdbId: Joi.number().integer().positive().required(),
+}).unknown(false);
+
 export const tvSeasonParamsSchema = Joi.object({
   tmdbId: Joi.number().integer().positive().required(),
   season: Joi.number().integer().positive().required(),

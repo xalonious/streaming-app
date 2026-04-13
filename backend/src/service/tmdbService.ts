@@ -192,3 +192,18 @@ export async function getTvAllEpisodes(tmdbId: number) {
     );
   }
 }
+
+export async function getRecommendations(
+  tmdbId: number,
+  type: "movie" | "tv"
+) {
+  try {
+    const { data } = await client.get(`/${type}/${tmdbId}/recommendations`);
+    const results = (data?.results ?? []).map(normalizeSearchResult);
+    return { results };
+  } catch (err: any) {
+    throw ServiceError.internalServerError(
+      `TMDB recommendations failed: ${err.message}`
+    );
+  }
+}

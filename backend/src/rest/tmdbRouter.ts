@@ -6,6 +6,7 @@ import {
   tmdbSearchQuerySchema,
   tmdbTrendingQuerySchema,
   tmdbIdParamsSchema,
+  tmdbRecommendationsParamsSchema,
   tvSeasonParamsSchema,
 } from "../validation/tmdbRoutes";
 
@@ -77,6 +78,16 @@ router.get(
       Number(tmdbId),
       Number(season)
     );
+    res.status(200).json(data);
+  })
+);
+
+router.get(
+  "/:type/:tmdbId/recommendations",
+  validateRequest({ params: tmdbRecommendationsParamsSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type, tmdbId } = req.params as { type: "movie" | "tv"; tmdbId: string };
+    const data = await tmdbService.getRecommendations(Number(tmdbId), type);
     res.status(200).json(data);
   })
 );
