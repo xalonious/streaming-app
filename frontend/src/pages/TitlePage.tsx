@@ -205,11 +205,7 @@ export default function TitlePage() {
                         ) : (
                           <div className="flex h-full items-center justify-center text-xs text-zinc-600">No image</div>
                         )}
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-                            <PlayIcon size={13} />
-                          </div>
-                        </div>
+
                         <div className="absolute bottom-1.5 left-1.5 bg-black/70 rounded px-1.5 py-0.5 text-[10px] text-zinc-300 font-medium">
                           {isCrossSeason ? `S${ep.season}·` : ""}E{ep.episode}
                         </div>
