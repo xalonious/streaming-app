@@ -188,7 +188,7 @@ export default function TitlePage() {
                   : loadingSeason ? "" : `${episodes.length} episodes`}
               </span>
             </div>
-            <div className={`relative transition-opacity ${loadingSeason ? "opacity-40 pointer-events-none" : ""}`}>
+            <div className={`relative transition-opacity ${loadingSeason ? "opacity-40 pointer-events-none" : ""}`} style={{ maxHeight: "600px", overflowY: "auto", overflowX: "hidden", scrollbarWidth: "thin", scrollbarColor: "#e50914 transparent" }}>
               {(seasonData as ErrorLike | null)?.__error ? (
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-sm text-red-300">Failed to load season.</div>
               ) : episodes?.length ? (
