@@ -28,6 +28,7 @@ export function HeroSection({ items, onPlay, onDetails }: {
       return { ...prev, [key]: null };
     });
   }
+
   useEffect(() => {
     if (!top10.length) return;
     prefetch(top10[activeIdx]);
@@ -105,13 +106,13 @@ export function HeroSection({ items, onPlay, onDetails }: {
           style={{ animation: "heroTextIn 0.6s ease 0.2s both", zIndex: 10 }}
         >
           <div className="flex items-center flex-wrap gap-2 mb-3 text-xs text-zinc-300">
-            {active.vote_average && (
+            {typeof active.vote_average === "number" && active.vote_average >= 1 && (
               <span className="flex items-center gap-1">
                 <StarIcon />
                 <span className="text-yellow-400 font-semibold">{active.vote_average.toFixed(1)}</span>
               </span>
             )}
-            {active.year && <><span className="text-zinc-600">|</span><span>{active.year}</span></>}
+            {active.year && <>{typeof active.vote_average === "number" && active.vote_average >= 1 && <span className="text-zinc-600">|</span>}<span>{active.year}</span></>}
           </div>
           {logoUrl ? (
             <img src={logoUrl} alt={active.title} className="h-20 sm:h-28 w-auto object-contain mb-3 drop-shadow-2xl" style={{ maxWidth: "380px" }} />
