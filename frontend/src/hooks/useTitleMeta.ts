@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getTitleImages } from "../api/tmdb";
 import type { TmdbMovie, TmdbTv } from "./useTitleDetails";
 
 type CastPerson = {
@@ -18,7 +19,7 @@ function pickBestTrailer(videos: any[]) {
   );
 }
 
-export function useTitleMeta(data: any, isMovie: boolean, isTv: boolean) {
+export function useTitleMeta(data: any, isMovie: boolean, isTv: boolean, tmdbId: number, type: string | undefined) {
   const runtime = isMovie ? (data as TmdbMovie | null)?.runtime : undefined;
   const numberOfSeasons = isTv ? (data as TmdbTv | null)?.number_of_seasons : undefined;
 
@@ -40,5 +41,13 @@ export function useTitleMeta(data: any, isMovie: boolean, isTv: boolean) {
     return raw.slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
   }, [data]);
 
-  return { runtime, numberOfSeasons, rating, trailer, trailerEmbedUrl, trailerModalUrl, fullCast };
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!tmdbId || !type || (type !== "movie" && type !== "tv")) return;
+    getTitleImages(type, tmdbId)
+      .then(d => setLogoUrl(d.logoUrl))
+      .catch(() => {});
+  }, [tmdbId, type]);
+
+  return { runtime, numberOfSeasons, rating, trailer, trailerEmbedUrl, trailerModalUrl, fullCast, logoUrl };
 }

@@ -50,3 +50,10 @@ export const recommendationsTmdb = async (
   );
   return res.data;
 };
+
+export const getTitleImages = async (type: "movie" | "tv", tmdbId: number) => {
+  const res = await apiClient.get<{ logoUrl: string | null }>(
+    `/tmdb/${type}/${tmdbId}/images`
+  );
+  return res.data;
+};

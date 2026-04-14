@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { type SearchResult } from "../api/tmdb";
+import { type SearchResult, getTitleImages } from "../api/tmdb";
 import { StarIcon, PlayIcon, InfoIcon } from "./Icons";
 
 export function HeroSection({ items, onPlay, onDetails }: {
@@ -10,8 +10,30 @@ export function HeroSection({ items, onPlay, onDetails }: {
   const [activeIdx, setActiveIdx] = useState(0);
   const [prevIdx, setPrevIdx] = useState<number | null>(null);
   const [animating, setAnimating] = useState(false);
+  const [logos, setLogos] = useState<Record<string, string | null>>({});
 
   const top10 = items.slice(0, 10);
+
+  function cacheKey(item: SearchResult) {
+    return `${item.type}:${item.id}`;
+  }
+
+  function prefetch(item: SearchResult) {
+    const key = cacheKey(item);
+    setLogos(prev => {
+      if (key in prev) return prev;
+      getTitleImages(item.type, item.id)
+        .then(d => setLogos(p => ({ ...p, [key]: d.logoUrl })))
+        .catch(() => setLogos(p => ({ ...p, [key]: null })));
+      return { ...prev, [key]: null };
+    });
+  }
+  useEffect(() => {
+    if (!top10.length) return;
+    prefetch(top10[activeIdx]);
+    const next = top10[(activeIdx + 1) % top10.length];
+    if (next) prefetch(next);
+  }, [activeIdx, top10.length]);
 
   function goTo(idx: number) {
     if (animating || idx === activeIdx) return;
@@ -39,6 +61,8 @@ export function HeroSection({ items, onPlay, onDetails }: {
   const prev = prevIdx !== null ? top10[prevIdx] : null;
 
   if (!active) return null;
+
+  const logoUrl = logos[cacheKey(active)] ?? null;
 
   return (
     <>
@@ -89,7 +113,11 @@ export function HeroSection({ items, onPlay, onDetails }: {
             )}
             {active.year && <><span className="text-zinc-600">|</span><span>{active.year}</span></>}
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black text-white leading-tight mb-3 tracking-tight">{active.title}</h1>
+          {logoUrl ? (
+            <img src={logoUrl} alt={active.title} className="h-20 sm:h-28 w-auto object-contain mb-3 drop-shadow-2xl" style={{ maxWidth: "380px" }} />
+          ) : (
+            <h1 className="text-4xl sm:text-5xl font-black text-white leading-tight mb-3 tracking-tight">{active.title}</h1>
+          )}
           {active.overview && (
             <p className="text-sm text-zinc-300/85 leading-relaxed mb-6 line-clamp-3 max-w-lg">{active.overview}</p>
           )}

@@ -207,3 +207,21 @@ export async function getRecommendations(
     );
   }
 }
+
+export async function getImages(tmdbId: number, type: "movie" | "tv") {
+  try {
+    const { data } = await client.get(`/${type}/${tmdbId}/images`, {
+      params: { include_image_language: "en,null" },
+    });
+    const logos = (data?.logos ?? []) as any[];
+    const sorted = logos
+      .filter((l: any) => l.file_path)
+      .sort((a: any, b: any) => (b.vote_average ?? 0) - (a.vote_average ?? 0));
+    const logo = sorted.find((l: any) => l.file_path?.endsWith(".png")) ?? sorted[0] ?? null;
+    return {
+      logoUrl: logo ? `https://image.tmdb.org/t/p/w500${logo.file_path}` : null,
+    };
+  } catch {
+    return { logoUrl: null };
+  }
+}

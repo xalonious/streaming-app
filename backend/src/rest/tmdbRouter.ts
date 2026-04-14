@@ -92,4 +92,14 @@ router.get(
   })
 );
 
+router.get(
+  "/:type/:tmdbId/images",
+  validateRequest({ params: tmdbRecommendationsParamsSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type, tmdbId } = req.params as { type: "movie" | "tv"; tmdbId: string };
+    const data = await tmdbService.getImages(Number(tmdbId), type);
+    res.status(200).json(data);
+  })
+);
+
 export default router;
