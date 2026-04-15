@@ -131,9 +131,9 @@ export default function TitlePage() {
                 <span className="font-semibold text-white">{rating}</span>
               </span>
             )}
-            {year && <><span className="text-zinc-600">|</span><span>{year}</span></>}
-            {isMovie && runtime && <><span className="text-zinc-600">|</span><span>{runtime} min</span></>}
-            {isTv && numberOfSeasons && <><span className="text-zinc-600">|</span><span>{numberOfSeasons} season{numberOfSeasons > 1 ? "s" : ""}</span></>}
+            {year && <>{rating && <span className="text-zinc-600">|</span>}<span>{year}</span></>}
+            {isMovie && !!runtime && <><span className="text-zinc-600">|</span><span>{runtime} min</span></>}
+            {isTv && !!numberOfSeasons && <><span className="text-zinc-600">|</span><span>{numberOfSeasons} season{numberOfSeasons > 1 ? "s" : ""}</span></>}
             {genres.slice(0, 3).map((g) => (
               <span key={g} className="contents"><span className="text-zinc-600">|</span><span>{g}</span></span>
             ))}
