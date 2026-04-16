@@ -11,8 +11,10 @@ export default function HomePage() {
   const nav = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
 
+
   const [mainItems, setMainItems] = useState<SearchResult[]>([]);
   const [mainLoading, setMainLoading] = useState(true);
+
 
   const [trendingItems, setTrendingItems] = useState<SearchResult[]>([]);
   const [trendWindow, setTrendWindow] = useState<"day" | "week">("day");
@@ -30,6 +32,7 @@ export default function HomePage() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+
   useEffect(() => {
     let cancelled = false;
     trendingTmdb("all", "day")
@@ -38,6 +41,7 @@ export default function HomePage() {
       .finally(() => { if (!cancelled) setMainLoading(false); });
     return () => { cancelled = true; };
   }, []);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -53,19 +57,19 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
       <Navbar onSearchOpen={() => setSearchOpen(true)} />
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
-
       {mainLoading ? (
         <div className="w-full bg-black animate-pulse" style={{ height: "91vh", minHeight: 500 }} />
       ) : mainItems.length > 0 ? (
         <HeroSection
           items={mainItems}
-          onPlay={(item) => nav(`/title/${item.type}/${item.id}`)}
+          onPlay={(item) => item.type === "movie"
+            ? nav(`/play/movie/${item.id}`)
+            : nav(`/play/tv/${item.id}/1/1`)}
           onDetails={(item) => nav(`/title/${item.type}/${item.id}`)}
         />
       ) : null}
 
       <div className="mx-auto max-w-[1400px]">
-
         {mainLoading ? (
           <div className="px-4 sm:px-6 py-8">
             <div className="h-20 w-64 bg-white/5 rounded animate-pulse mb-6" />
@@ -80,7 +84,6 @@ export default function HomePage() {
         ) : mainItems.length > 0 ? (
           <Top10Carousel items={mainItems} onOpen={(item) => nav(`/title/${item.type}/${item.id}`)} />
         ) : null}
-
         {trendingItems.length > 0 && (
           <TrendingRow
             items={trendingItems}

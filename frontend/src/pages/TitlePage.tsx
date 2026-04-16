@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useRecommendations } from "../hooks/useRecommendations";
-import { PlayIcon, StarIcon, SearchIcon, CloseIcon } from "../components/Icons";
+import { PlayIcon, StarIcon, SearchIcon, CloseIcon, ChevronLeft } from "../components/Icons";
 import { useTitleMeta } from "../hooks/useTitleMeta";
 import { ActorCard } from "../components/ActorCard";
 import { SeasonDropdown } from "../components/SeasonDropdown";
 import { useTitleDetails, type ErrorLike } from "../hooks/useTitleDetails";
 import { useSeasonEpisodes } from "../hooks/useSeasonEpisodes";
 import { useCrossSeasonEpisodeSearch } from "../hooks/useCrossSeasonEpisodeSearch";
-
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -116,7 +115,7 @@ export default function TitlePage() {
           onClick={() => nav(-1)}
           className="absolute top-5 left-6 z-10 w-9 h-9 flex items-center justify-center bg-black/40 hover:bg-black/70 backdrop-blur-sm border border-white/15 rounded-full text-white transition-all"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+          <ChevronLeft />
         </button>
         <div className="absolute bottom-0 left-0 right-0 z-10 px-6 sm:px-10 pb-12 max-w-2xl">
           {logoUrl ? (
@@ -225,9 +224,7 @@ export default function TitlePage() {
                           {ep.overview || "—"}
                         </div>
                       </div>
-                      <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      </div>
+                
                     </Link>
                   ))}
                 </div>
@@ -284,7 +281,7 @@ export default function TitlePage() {
                       </span>
                       {item.vote_average && (
                         <span className="flex items-center gap-1 bg-black/60 border border-white/20 rounded px-1.5 py-0.5">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="#e50914"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                          <StarIcon />
                           <span className="text-[10px] text-zinc-200 font-semibold">{item.vote_average.toFixed(1)}</span>
                         </span>
                       )}
@@ -298,7 +295,6 @@ export default function TitlePage() {
             </div>
           </section>
         )}
-
 
       </div>
       {showTrailer && trailerModalUrl && (

@@ -29,3 +29,15 @@ export function SearchIcon({ size = 18, className = "" }: { size?: number; class
 export function CloseIcon({ size = 18 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>;
 }
+
+export function ChevronDown({ size = 12 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>;
+}
+
+export function ClockIcon() {
+  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+}
+
+export function CheckIcon() {
+  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e50914" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6 9 17l-5-5"/></svg>;
+}

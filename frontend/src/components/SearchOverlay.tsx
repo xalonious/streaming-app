@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { type SearchResult } from "../api/tmdb";
 import useDebounce from "../hooks/useDebounce";
 import { useTmdbSearch } from "../hooks/useTmdbSearch";
-import { SearchIcon, CloseIcon, PlayIcon, InfoIcon, StarIcon } from "./Icons";
+import { SearchIcon, CloseIcon, PlayIcon, InfoIcon, StarIcon, ChevronDown, ClockIcon, CheckIcon } from "./Icons";
 import { useRecentQueries } from "../hooks/useRecentQueries";
 
 const STORAGE_KEY = "xalonstream:recentQueries";
@@ -70,7 +70,17 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
     setFilterOpen(o => !o);
   }
 
-  function handleNavigate(item: SearchResult) {
+  function handlePlay(item: SearchResult) {
+    commit(q.trim());
+    if (item.type === "movie") {
+      nav(`/play/movie/${item.id}`);
+    } else {
+      nav(`/play/tv/${item.id}/1/1`);
+    }
+    onClose();
+  }
+
+  function handleDetails(item: SearchResult) {
     commit(q.trim());
     nav(`/title/${item.type}/${item.id}`);
     onClose();
@@ -113,10 +123,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                   className="flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.12] rounded-xl px-3 py-1.5 text-zinc-300 text-[13px] cursor-pointer transition-colors whitespace-nowrap"
                 >
                   {filterLabel}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                    style={{ transform: filterOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>
-                    <path d="m6 9 6 6 6-6"/>
-                  </svg>
+                  <span style={{ display: "inline-flex", transform: filterOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}><ChevronDown /></span>
                 </button>
                 {createPortal(
                   <div
@@ -139,11 +146,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                           ${filterType === opt ? "bg-white/[0.06] text-white" : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"}`}
                       >
                         {opt === "multi" ? "Movies & TV Shows" : opt === "movie" ? "Movies" : "TV Shows"}
-                        {filterType === opt && (
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e50914" strokeWidth="2.5" strokeLinecap="round">
-                            <path d="M20 6 9 17l-5-5"/>
-                          </svg>
-                        )}
+                        {filterType === opt && <CheckIcon />}
                       </button>
                     ))}
                   </div>,
@@ -193,9 +196,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                       transition: `opacity 0.22s ease ${i * 40}ms, transform 0.22s ease ${i * 40}ms`,
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2" strokeLinecap="round">
-                      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                    </svg>
+                    <ClockIcon />
                     {r}
                   </button>
                 ))}
@@ -242,7 +243,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                         className="text-zinc-600 flex-shrink-0 transition-transform duration-200"
                         style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+<ChevronDown size={14} />
                       </span>
                     </button>
                     <div
@@ -255,14 +256,14 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                         )}
                         <div className="flex gap-2.5">
                           <button
-                            onClick={() => handleNavigate(item)}
+                            onClick={() => handlePlay(item)}
                             className="flex items-center gap-1.5 bg-white text-black font-bold text-xs rounded-[10px] px-4 py-1.5 cursor-pointer border-none hover:bg-zinc-100 transition-colors"
                           >
                             <PlayIcon size={11} />
                             Play
                           </button>
                           <button
-                            onClick={() => handleNavigate(item)}
+                            onClick={() => handleDetails(item)}
                             className="flex items-center gap-1.5 bg-white/10 text-white font-semibold text-xs rounded-[10px] px-4 py-1.5 cursor-pointer border border-white/10 hover:bg-white/20 transition-colors"
                           >
                             <InfoIcon />
