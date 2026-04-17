@@ -37,7 +37,7 @@ type TmdbSeasonEpisode = {
 
 type TmdbSeason = { episodes?: TmdbSeasonEpisode[] };
 
-type SeasonCache = Record<number, TmdbSeason | ErrorLike>;
+type SeasonCache = Record<string, TmdbSeason | ErrorLike>;
 
 const TMDB_STILL_BASE_RE = /^https?:\/\/image\.tmdb\.org\/t\/p\/(?:w\d+|original)/i;
 
@@ -75,6 +75,14 @@ export function useCrossSeasonEpisodeSearch({
   const [loadError, setLoadError] = useState<ErrorLike | null>(null);
 
   const runIdRef = useRef(0);
+
+  useEffect(() => {
+    runIdRef.current += 1;
+    setAllEpisodes(null);
+    setLoadError(null);
+    setSearchingAll(false);
+    setPrefetchProgress({ loaded: 0, total: 0 });
+  }, [tmdbId, enabled]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -123,8 +131,9 @@ export function useCrossSeasonEpisodeSearch({
 
             for (const [snStr, episodes] of Object.entries(bySeason)) {
               const sn = Number(snStr);
-              if (next[sn]) continue; 
-              next[sn] = { episodes };
+              const key = `${tmdbId}:${sn}`;
+              if (next[key]) continue;
+              next[key] = { episodes };
               changed = true;
             }
 

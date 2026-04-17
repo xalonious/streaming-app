@@ -23,22 +23,30 @@ export function useSeasonEpisodes(params: {
   const [seasonData, setSeasonData] = useState<TmdbSeason | ErrorLike | null>(null);
   const [loadingSeason, setLoadingSeason] = useState(false);
 
-  const [seasonCache, setSeasonCache] = useState<Record<number, TmdbSeason | ErrorLike>>({});
+  const [seasonCache, setSeasonCache] = useState<Record<string, TmdbSeason | ErrorLike>>({});
+  const cacheKey = `${tmdbId}:${seasonNumber}`;
 
   const cacheRef = useRef(seasonCache);
   useEffect(() => {
     cacheRef.current = seasonCache;
   }, [seasonCache]);
 
+  useEffect(() => {
+    setSeasonCache({});
+    setSeasonData(null);
+    setLoadingSeason(false);
+  }, [tmdbId, enabled]);
+
   const ensureSeasonLoaded = async (sn: number) => {
     if (!enabled) return;
-    if (cacheRef.current[sn]) return;
+    const key = `${tmdbId}:${sn}`;
+    if (cacheRef.current[key]) return;
 
     try {
       const s = (await getTvSeason(tmdbId, sn)) as TmdbSeason;
-      setSeasonCache((prev) => (prev[sn] ? prev : { ...prev, [sn]: s }));
+      setSeasonCache((prev) => (prev[key] ? prev : { ...prev, [key]: s }));
     } catch {
-      setSeasonCache((prev) => (prev[sn] ? prev : { ...prev, [sn]: { __error: true } }));
+      setSeasonCache((prev) => (prev[key] ? prev : { ...prev, [key]: { __error: true } }));
     }
   };
 
@@ -47,7 +55,7 @@ export function useSeasonEpisodes(params: {
 
     let cancelled = false;
 
-    const cached = cacheRef.current[seasonNumber];
+    const cached = cacheRef.current[cacheKey];
     if (cached) {
       setSeasonData(cached);
       setLoadingSeason(false);
@@ -60,13 +68,13 @@ export function useSeasonEpisodes(params: {
       .then((s) => {
         if (cancelled) return;
         setSeasonData(s);
-        setSeasonCache((prev) => ({ ...prev, [seasonNumber]: s }));
+        setSeasonCache((prev) => ({ ...prev, [cacheKey]: s }));
       })
       .catch(() => {
         if (cancelled) return;
         const err = { __error: true } as ErrorLike;
         setSeasonData(err);
-        setSeasonCache((prev) => ({ ...prev, [seasonNumber]: err }));
+        setSeasonCache((prev) => ({ ...prev, [cacheKey]: err }));
       })
       .finally(() => {
         if (!cancelled) setLoadingSeason(false);
@@ -75,7 +83,7 @@ export function useSeasonEpisodes(params: {
     return () => {
       cancelled = true;
     };
-  }, [enabled, tmdbId, seasonNumber]);
+  }, [cacheKey, enabled, tmdbId, seasonNumber]);
 
   const resetCache = () => {
     setSeasonCache({});
