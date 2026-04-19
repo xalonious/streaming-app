@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { type SearchResult, type Genre, getGenresTmdb, discoverByGenreTmdb } from "../api/tmdb";
-import { ChevronLeft, ChevronRight, StarIcon, ChevronDown } from "./Icons";
+import { ChevronLeft, ChevronRight, StarIcon, ChevronDown, CheckIcon } from "./Icons";
 
 export function GenreRow({ onOpen }: { onOpen: (item: SearchResult) => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -105,7 +105,7 @@ export function GenreRow({ onOpen }: { onOpen: (item: SearchResult) => void }) {
               >
                 {g.name}
                 {activeGenre?.id === g.id && (
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e50914" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  <CheckIcon />
                 )}
               </button>
             ))}
