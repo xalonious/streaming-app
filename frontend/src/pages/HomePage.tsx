@@ -21,7 +21,7 @@ export default function HomePage() {
   const [topRatedItems, setTopRatedItems] = useState<SearchResult[]>([]);
   const [topRatedType, setTopRatedType] = useState<"movie" | "tv">("movie");
 
-  useEffect(() => { document.title = "StreamVault"; }, []);
+  useEffect(() => { document.title = "Streaming"; }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -5,17 +5,20 @@ Built for personal use and optimized for home servers and low-power devices such
 
 ## Overview
 
-Streaming App provides a clean, modern interface for exploring movies and TV shows, viewing trending content, and playing media through an embedded player. The application does not include or bundle any media content and relies entirely on user-supplied sources.
+Streaming App provides a cinematic, modern interface for exploring movies and TV shows, with a fully redesigned home page and title pages inspired by services like Cineby. The application does not include or bundle any media content and relies entirely on user-supplied sources.
 
-## Core Features
+## Features
 
 - Movie & TV discovery powered by TMDB
-- Trending and featured content on the home page
-- Fast, responsive React + Vite frontend
+- Auto-cycling hero banner with crossfade transitions and dot indicators
+- TOP 10, Trending, Top Rated, and Browse by Genre sections
+- Title logo art fetched from TMDB
+- Full title pages with trailer background, cast, episodes, and recommendations
+- Search overlay with animated results and recent history
+- Fast, responsive React + TypeScript + Vite frontend
 - Node/Express backend API
 - Provider-agnostic streaming integration (configured via environment variables)
 - Designed for private deployment behind a firewall, VPN, or reverse proxy
-- Optimized for self-hosting on home servers
 
 ## Key Principles
 
@@ -25,4 +28,5 @@ Streaming App provides a clean, modern interface for exploring movies and TV sho
 - Focused on simplicity, performance, and privacy
 
 ## License
+
 This project is licensed under the **MIT License**.
