@@ -57,3 +57,20 @@ export const getTitleImages = async (type: "movie" | "tv", tmdbId: number) => {
   );
   return res.data;
 };
+
+export const topRatedTmdb = async (type: "movie" | "tv") => {
+  const res = await apiClient.get<{ results: SearchResult[] }>(`/tmdb/top-rated/${type}`);
+  return res.data;
+};
+
+export type Genre = { id: number; name: string };
+
+export const getGenresTmdb = async (type: "movie" | "tv") => {
+  const res = await apiClient.get<{ genres: Genre[] }>(`/tmdb/genres/${type}`);
+  return res.data;
+};
+
+export const discoverByGenreTmdb = async (type: "movie" | "tv", genreId: number) => {
+  const res = await apiClient.get<{ results: SearchResult[] }>(`/tmdb/discover/${type}/${genreId}`);
+  return res.data;
+};

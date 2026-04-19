@@ -225,3 +225,34 @@ export async function getImages(tmdbId: number, type: "movie" | "tv") {
     return { logoUrl: null };
   }
 }
+
+export async function getTopRated(type: "movie" | "tv") {
+  try {
+    const { data } = await client.get(`/${type}/top_rated`);
+    const results = (data?.results ?? []).map(normalizeSearchResult);
+    return { results };
+  } catch (err: any) {
+    throw ServiceError.internalServerError(`TMDB top rated failed: ${err.message}`);
+  }
+}
+
+export async function getGenres(type: "movie" | "tv") {
+  try {
+    const { data } = await client.get(`/genre/${type}/list`);
+    return { genres: data?.genres ?? [] };
+  } catch (err: any) {
+    throw ServiceError.internalServerError(`TMDB genres failed: ${err.message}`);
+  }
+}
+
+export async function discoverByGenre(type: "movie" | "tv", genreId: number) {
+  try {
+    const { data } = await client.get(`/discover/${type}`, {
+      params: { with_genres: genreId, sort_by: "popularity.desc", include_adult: false },
+    });
+    const results = (data?.results ?? []).map(normalizeSearchResult);
+    return { results };
+  } catch (err: any) {
+    throw ServiceError.internalServerError(`TMDB discover failed: ${err.message}`);
+  }
+}

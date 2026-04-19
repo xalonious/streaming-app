@@ -1,25 +1,27 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { trendingTmdb, type SearchResult } from "../api/tmdb";
+import { trendingTmdb, topRatedTmdb, type SearchResult } from "../api/tmdb";
 import { Navbar } from "../components/Navbar";
 import { SearchOverlay } from "../components/SearchOverlay";
 import { HeroSection } from "../components/HeroSection";
 import { Top10Carousel } from "../components/Top10Carousel";
 import { TrendingRow } from "../components/TrendingRow";
+import { TopRatedRow } from "../components/TopRatedRow";
+import { GenreRow } from "../components/GenreRow";
 
 export default function HomePage() {
   const nav = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
 
-
   const [mainItems, setMainItems] = useState<SearchResult[]>([]);
   const [mainLoading, setMainLoading] = useState(true);
 
-
   const [trendingItems, setTrendingItems] = useState<SearchResult[]>([]);
   const [trendWindow, setTrendWindow] = useState<"day" | "week">("day");
+  const [topRatedItems, setTopRatedItems] = useState<SearchResult[]>([]);
+  const [topRatedType, setTopRatedType] = useState<"movie" | "tv">("movie");
 
-  useEffect(() => { document.title = "Streaming"; }, []);
+  useEffect(() => { document.title = "StreamVault"; }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -32,7 +34,6 @@ export default function HomePage() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-
   useEffect(() => {
     let cancelled = false;
     trendingTmdb("all", "day")
@@ -42,6 +43,13 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    topRatedTmdb(topRatedType)
+      .then(d => { if (!cancelled) setTopRatedItems(d.results ?? []); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [topRatedType]);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,7 +59,6 @@ export default function HomePage() {
       .catch(() => {});
     return () => { cancelled = true; };
   }, [trendWindow]);
-
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
@@ -92,6 +99,17 @@ export default function HomePage() {
             onTrendWindowChange={setTrendWindow}
           />
         )}
+
+        {topRatedItems.length > 0 && (
+          <TopRatedRow
+            items={topRatedItems}
+            onOpen={(item) => nav(`/title/${item.type}/${item.id}`)}
+            type={topRatedType}
+            onTypeChange={setTopRatedType}
+          />
+        )}
+
+        <GenreRow onOpen={(item) => nav(`/title/${item.type}/${item.id}`)} />
 
       </div>
 

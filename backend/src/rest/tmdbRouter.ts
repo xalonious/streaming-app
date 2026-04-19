@@ -7,6 +7,8 @@ import {
   tmdbTrendingQuerySchema,
   tmdbIdParamsSchema,
   tmdbRecommendationsParamsSchema,
+  tmdbTypeParamsSchema,
+  tmdbDiscoverParamsSchema,
   tvSeasonParamsSchema,
 } from "../validation/tmdbRoutes";
 
@@ -98,6 +100,36 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { type, tmdbId } = req.params as { type: "movie" | "tv"; tmdbId: string };
     const data = await tmdbService.getImages(Number(tmdbId), type);
+    res.status(200).json(data);
+  })
+);
+
+router.get(
+  "/top-rated/:type",
+  validateRequest({ params: tmdbTypeParamsSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type } = req.params as { type: "movie" | "tv" };
+    const data = await tmdbService.getTopRated(type);
+    res.status(200).json(data);
+  })
+);
+
+router.get(
+  "/genres/:type",
+  validateRequest({ params: tmdbTypeParamsSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type } = req.params as { type: "movie" | "tv" };
+    const data = await tmdbService.getGenres(type);
+    res.status(200).json(data);
+  })
+);
+
+router.get(
+  "/discover/:type/:genreId",
+  validateRequest({ params: tmdbDiscoverParamsSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { type, genreId } = req.params as { type: "movie" | "tv"; genreId: string };
+    const data = await tmdbService.discoverByGenre(type, Number(genreId));
     res.status(200).json(data);
   })
 );
