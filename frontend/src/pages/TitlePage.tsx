@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useRecommendations } from "../hooks/useRecommendations";
-import { PlayIcon, StarIcon, SearchIcon, CloseIcon, ChevronLeft } from "../components/Icons";
+import { PlayIcon, StarIcon, SearchIcon, ChevronLeft } from "../components/Icons";
 import { useTitleMeta } from "../hooks/useTitleMeta";
 import { ActorCard } from "../components/ActorCard";
 import { SeasonDropdown } from "../components/SeasonDropdown";
+import { TrailerModal } from "../components/TrailerModal";
+import { RecommendationsGrid } from "../components/RecommendationsGrid";
 import { useTitleDetails, type ErrorLike } from "../hooks/useTitleDetails";
 import { useSeasonEpisodes } from "../hooks/useSeasonEpisodes";
 import { useCrossSeasonEpisodeSearch } from "../hooks/useCrossSeasonEpisodeSearch";
@@ -166,7 +168,6 @@ export default function TitlePage() {
                 <PlayIcon size={13} /> Trailer
               </button>
             )}
-
           </div>
         </div>
       </div>
@@ -208,7 +209,6 @@ export default function TitlePage() {
                         ) : (
                           <div className="flex h-full items-center justify-center text-xs text-zinc-600">No image</div>
                         )}
-
                         <div className="absolute bottom-1.5 left-1.5 bg-black/70 rounded px-1.5 py-0.5 text-[10px] text-zinc-300 font-medium">
                           {isCrossSeason ? `S${ep.season}·` : ""}E{ep.episode}
                         </div>
@@ -224,14 +224,12 @@ export default function TitlePage() {
                           {ep.overview || "—"}
                         </div>
                       </div>
-                
                     </Link>
                   ))}
                 </div>
               ) : (
                 <div className="py-8 text-sm text-zinc-500">No episodes found.</div>
               )}
-
               {loadingSeason && (
                 <div className="absolute inset-0 flex items-start justify-center pt-10">
                   <div className="flex items-center gap-2 bg-black/70 backdrop-blur rounded-xl border border-white/10 px-4 py-2 text-sm text-zinc-300">
@@ -253,67 +251,14 @@ export default function TitlePage() {
             </div>
           </section>
         )}
-        {recommendations.length > 0 && (
-          <section className="mt-12">
-            <SectionHeading>You may like</SectionHeading>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
-              {recommendations.slice(0, 18).map(item => (
-                <Link
-                  key={item.id}
-                  to={`/title/${item.type}/${item.id}`}
-                  className="group block"
-                >
-                  <div className="relative rounded-xl overflow-hidden ring-1 ring-white/10 group-hover:ring-white/30 transition-all duration-200 group-hover:scale-[1.03]">
-                    {item.backdrop ?? item.poster ? (
-                      <img
-                        src={(item.backdrop ?? item.poster)!}
-                        alt={item.title}
-                        className="w-full aspect-video object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full aspect-video bg-zinc-800 flex items-center justify-center text-xs text-zinc-500">{item.title}</div>
-                    )}
-                    <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)" }} />
-                    <div className="absolute top-2 left-2 flex items-center justify-between w-[calc(100%-16px)]">
-                      <span className="text-[10px] bg-black/60 border border-white/20 rounded px-1.5 py-0.5 text-zinc-300 uppercase tracking-wide font-medium">
-                        {item.type === "tv" ? "TV Show" : "Movie"}
-                      </span>
-                      {item.vote_average && (
-                        <span className="flex items-center gap-1 bg-black/60 border border-white/20 rounded px-1.5 py-0.5">
-                          <StarIcon />
-                          <span className="text-[10px] text-zinc-200 font-semibold">{item.vote_average.toFixed(1)}</span>
-                        </span>
-                      )}
-                    </div>
-                    <div className="absolute bottom-2 left-2 right-2">
-                      <div className="text-white text-xs font-bold line-clamp-1">{item.title}</div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
+        <RecommendationsGrid items={recommendations} />
       </div>
       {showTrailer && trailerModalUrl && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4" onClick={() => setShowTrailer(false)}>
-          <div className="w-full max-w-4xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-zinc-300 truncate">{trailer?.name ?? "Trailer"}</span>
-              <button
-                onClick={() => setShowTrailer(false)}
-                className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full border border-white/15 text-zinc-400 hover:text-white transition ml-3"
-              >
-                <CloseIcon size={14} />
-              </button>
-            </div>
-            <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black">
-              <iframe src={trailerModalUrl} title={trailer?.name ?? "Trailer"} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen className="w-full h-full" />
-            </div>
-          </div>
-        </div>
+        <TrailerModal
+          url={trailerModalUrl}
+          name={trailer?.name}
+          onClose={() => setShowTrailer(false)}
+        />
       )}
     </div>
   );
