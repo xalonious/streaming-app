@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { type SearchResult } from "../api/tmdb";
 import { ChevronLeft, ChevronRight, StarIcon } from "./Icons";
 
@@ -9,6 +9,10 @@ export function TrendingRow({ items, onOpen, trendWindow, onTrendWindowChange }:
   onTrendWindowChange: (w: "day" | "week") => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  }, [trendWindow]);
+
   const scroll = (dir: "left" | "right") => {
     scrollRef.current?.scrollBy({ left: dir === "left" ? -640 : 640, behavior: "smooth" });
   };

@@ -47,6 +47,10 @@ export function GenreRow({ onOpen }: { onOpen: (item: SearchResult) => void }) {
     setDropdownOpen(o => !o);
   }
 
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  }, [items]);
+
   const scroll = (dir: "left" | "right") => {
     scrollRef.current?.scrollBy({ left: dir === "left" ? -640 : 640, behavior: "smooth" });
   };
