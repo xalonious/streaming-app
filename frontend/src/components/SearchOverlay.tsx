@@ -22,7 +22,10 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   const [mounted, setMounted] = useState(false);
   const [show, setShow] = useState(false);
   const [resultsVersion, setResultsVersion] = useState(0);
+  const [bodyHeight, setBodyHeight] = useState<number | null>(null);
   const prevResultsRef = useRef<SearchResult[]>([]);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
 
   const dq = useDebounce(q, 350);
   const trimmed = dq.trim();
@@ -36,6 +39,17 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
       setResultsVersion(v => v + 1);
     }
   }, [results]);
+
+  useEffect(() => {
+    if (!q && recent.length === 0) {
+      setBodyHeight(0);
+      return;
+    }
+    requestAnimationFrame(() => {
+      const el = innerRef.current;
+      if (el) setBodyHeight(el.scrollHeight);
+    });
+  }, [results, q, recent]);
 
   useEffect(() => {
     if (open) {
@@ -178,7 +192,8 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
               )}
             </div>
           </div>
-          <div className="max-h-[58vh] overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#2a2a2a transparent" }}>
+          <div ref={bodyRef} style={{ height: bodyHeight !== null ? bodyHeight : "auto", maxHeight: "58vh", overflowY: "auto", transition: "height 400ms cubic-bezier(0.4, 0, 0.2, 1)", scrollbarWidth: "thin", scrollbarColor: "#2a2a2a transparent" }}>
+          <div ref={innerRef}>
             {!q && recent.length > 0 && (
               <div className="px-5 py-3 border-t border-white/[0.06]">
                 <div className="flex items-center justify-between mb-2.5">
@@ -276,6 +291,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                 );
               })}
             </div>
+          </div>
           </div>
         </div>
       </div>
