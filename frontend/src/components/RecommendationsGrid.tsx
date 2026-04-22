@@ -29,7 +29,7 @@ export function RecommendationsGrid({ items }: { items: SearchResult[] }) {
             <div className="mt-2.5 px-0.5">
               <div className="text-white text-sm font-semibold truncate">{item.title}</div>
               <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-zinc-400 flex-wrap">
-                {item.vote_average && item.vote_average >= 1 && (
+                {!!item.vote_average && item.vote_average >= 1 && (
                   <span className="flex items-center gap-1"><StarIcon /><span className="text-zinc-300">{item.vote_average.toFixed(1)}</span></span>
                 )}
                 {item.year && <><span className="text-zinc-600">·</span><span>{item.year}</span></>}

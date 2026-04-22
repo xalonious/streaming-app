@@ -9,6 +9,7 @@ export function TrendingRow({ items, onOpen, trendWindow, onTrendWindowChange }:
   onTrendWindowChange: (w: "day" | "week") => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ left: 0, behavior: "smooth" });
   }, [trendWindow]);
@@ -37,19 +38,13 @@ export function TrendingRow({ items, onOpen, trendWindow, onTrendWindowChange }:
           >Series</button>
         </div>
       </div>
-
       <div className="relative group/carousel">
         <button onClick={() => scroll("left")} className="absolute left-0 top-[38%] -translate-y-1/2 -translate-x-5 z-10 w-10 h-10 flex items-center justify-center bg-black/90 rounded-full border border-white/15 text-white opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200">
           <ChevronLeft />
         </button>
         <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
           {items.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => onOpen(item)}
-              className="flex-shrink-0 group/card text-left"
-              style={{ width: 200 }}
-            >
+            <button key={item.id} onClick={() => onOpen(item)} className="flex-shrink-0 group/card text-left" style={{ width: 200 }}>
               <div className="relative rounded-xl overflow-hidden ring-1 ring-white/10 group-hover/card:ring-white/30 transition-all duration-200 group-hover/card:scale-[1.02]">
                 {item.poster ? (
                   <img src={item.poster} alt={item.title} className="w-full aspect-[2/3] object-cover" loading="lazy" />
@@ -60,7 +55,7 @@ export function TrendingRow({ items, onOpen, trendWindow, onTrendWindowChange }:
               <div className="mt-2.5 px-0.5">
                 <div className="text-white text-sm font-semibold truncate">{item.title}</div>
                 <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-zinc-400 flex-wrap">
-                  {item.vote_average && item.vote_average >= 1 && (
+                  {!!item.vote_average && item.vote_average >= 1 && (
                     <span className="flex items-center gap-1"><StarIcon /><span className="text-zinc-300">{item.vote_average.toFixed(1)}</span></span>
                   )}
                   {item.year && <><span className="text-zinc-600">·</span><span>{item.year}</span></>}
