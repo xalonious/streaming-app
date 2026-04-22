@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, CheckIcon } from "./Icons";
+import { useDropdown } from "../hooks/useDropdown";
 
 export function SeasonDropdown({
   seasons,
@@ -11,63 +12,19 @@ export function SeasonDropdown({
   value: number;
   onChange: (seasonNumber: number) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
-
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const btnRef = useRef<HTMLButtonElement | null>(null);
-  const listRef = useRef<HTMLDivElement | null>(null);
+  const { open, setOpen, pos, btnRef, wrapRef, listRef } = useDropdown();
 
   const selected = useMemo(() => {
     const found = seasons.find((s) => s.season_number === value);
     return found?.name ?? `Season ${value}`;
   }, [seasons, value]);
 
-  const updatePos = () => {
-    const el = btnRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    setPos({ left: r.left, top: r.bottom + 6 });
-  };
-
-  useLayoutEffect(() => {
-    updatePos();
-  }, [open]);
-
   useEffect(() => {
     if (!open) return;
-    window.addEventListener("resize", updatePos);
-    window.addEventListener("scroll", updatePos, true);
-    return () => {
-      window.removeEventListener("resize", updatePos);
-      window.removeEventListener("scroll", updatePos, true);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    function onDown(e: MouseEvent) {
-      const t = e.target as Node;
-      if (wrapRef.current?.contains(t)) return;
-      if (listRef.current?.parentElement?.contains(t)) return;
-      setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const el = listRef.current;
-    if (!el) return;
-    const active = el.querySelector(`[data-season="${value}"]`) as HTMLElement | null;
-    if (active) el.scrollTop = Math.max(0, active.offsetTop - el.clientHeight / 2 + active.offsetHeight / 2);
+    const container = listRef.current;
+    if (!container) return;
+    const active = container.querySelector(`[data-season="${value}"]`) as HTMLElement | null;
+    if (active) container.scrollTop = Math.max(0, active.offsetTop - container.clientHeight / 2 + active.offsetHeight / 2);
   }, [open, value]);
 
   return (
@@ -86,6 +43,7 @@ export function SeasonDropdown({
 
       {pos && createPortal(
         <div
+          ref={listRef}
           className="fixed rounded-xl overflow-hidden border border-white/[0.12] bg-[#1e1e1e]"
           style={{
             top: pos.top, left: pos.left,
@@ -99,27 +57,25 @@ export function SeasonDropdown({
             scrollbarColor: "#333 transparent",
           }}
         >
-          <div ref={listRef}>
-            {seasons.map(s => {
-              const n = s.season_number;
-              const name = s.name ?? `Season ${n}`;
-              const active = n === value;
-              return (
-                <button
-                  key={s.id ?? n}
-                  type="button"
-                  data-season={n}
-                  onClick={() => { onChange(n); setOpen(false); }}
-                  className={`flex items-center justify-between w-full px-4 py-2.5 text-sm border-none cursor-pointer text-left transition-colors border-b border-white/[0.05] last:border-0 ${
-                    active ? "bg-white/[0.08] text-white" : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
-                  }`}
-                >
-                  {name}
-                  {active && <CheckIcon />}
-                </button>
-              );
-            })}
-          </div>
+          {seasons.map(s => {
+            const n = s.season_number;
+            const name = s.name ?? `Season ${n}`;
+            const active = n === value;
+            return (
+              <button
+                key={s.id ?? n}
+                type="button"
+                data-season={n}
+                onClick={() => { onChange(n); setOpen(false); }}
+                className={`flex items-center justify-between w-full px-4 py-2.5 text-sm border-none cursor-pointer text-left transition-colors border-b border-white/[0.05] last:border-0 ${
+                  active ? "bg-white/[0.08] text-white" : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
+                }`}
+              >
+                {name}
+                {active && <CheckIcon />}
+              </button>
+            );
+          })}
         </div>,
         document.body
       )}

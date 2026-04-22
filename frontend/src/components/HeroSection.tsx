@@ -1,19 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { type SearchResult, getTitleImages } from "../api/tmdb";
 import { StarIcon, PlayIcon, InfoIcon } from "./Icons";
+import { useSlideshow } from "../hooks/useSlideshow";
 
 export function HeroSection({ items, onPlay, onDetails }: {
   items: SearchResult[];
   onPlay: (item: SearchResult) => void;
   onDetails: (item: SearchResult) => void;
 }) {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [prevIdx, setPrevIdx] = useState<number | null>(null);
-  const [animating, setAnimating] = useState(false);
   const [logos, setLogos] = useState<Record<string, string | null>>({});
-  const animationTimeoutRef = useRef<number | null>(null);
 
   const top10 = items.slice(0, 10);
+  const { activeIdx, prevIdx, goTo } = useSlideshow(top10.length);
 
   function cacheKey(item: SearchResult) {
     return `${item.type}:${item.id}`;
@@ -36,45 +34,6 @@ export function HeroSection({ items, onPlay, onDetails }: {
     const next = top10[(activeIdx + 1) % top10.length];
     if (next) prefetch(next);
   }, [activeIdx, top10.length]);
-
-  function transitionTo(idx: number) {
-    if (idx === activeIdx) return;
-
-    if (animationTimeoutRef.current !== null) {
-      window.clearTimeout(animationTimeoutRef.current);
-    }
-
-    setPrevIdx(activeIdx);
-    setAnimating(true);
-    setActiveIdx(idx);
-    animationTimeoutRef.current = window.setTimeout(() => {
-      setPrevIdx(null);
-      setAnimating(false);
-      animationTimeoutRef.current = null;
-    }, 700);
-  }
-
-  function goTo(idx: number) {
-    if (animating) return;
-    transitionTo(idx);
-  }
-
-  useEffect(() => {
-    if (top10.length < 2) return;
-    const t = window.setTimeout(() => {
-      transitionTo((activeIdx + 1) % top10.length);
-    }, 10000);
-
-    return () => window.clearTimeout(t);
-  }, [activeIdx, top10.length]);
-
-  useEffect(() => {
-    return () => {
-      if (animationTimeoutRef.current !== null) {
-        window.clearTimeout(animationTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const active = top10[activeIdx];
   const prev = prevIdx !== null ? top10[prevIdx] : null;
