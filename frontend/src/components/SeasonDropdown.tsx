@@ -31,7 +31,6 @@ export function SeasonDropdown({
   };
 
   useLayoutEffect(() => {
-    if (!open) return;
     updatePos();
   }, [open]);
 
@@ -49,7 +48,7 @@ export function SeasonDropdown({
     function onDown(e: MouseEvent) {
       const t = e.target as Node;
       if (wrapRef.current?.contains(t)) return;
-      if (listRef.current?.parentElement?.parentElement?.contains(t)) return;
+      if (listRef.current?.parentElement?.contains(t)) return;
       setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
@@ -85,13 +84,17 @@ export function SeasonDropdown({
         </span>
       </button>
 
-      {open && pos && createPortal(
+      {pos && createPortal(
         <div
           className="fixed rounded-xl overflow-hidden border border-white/[0.12] bg-[#1e1e1e]"
           style={{
             top: pos.top, left: pos.left,
             zIndex: 99999, minWidth: 200, maxHeight: 320, overflowY: "auto",
             boxShadow: "0 16px 48px rgba(0,0,0,0.8)",
+            opacity: open ? 1 : 0,
+            transform: open ? "translateY(0) scale(1)" : "translateY(-6px) scale(0.97)",
+            pointerEvents: open ? "auto" : "none",
+            transition: "opacity 0.18s ease, transform 0.18s ease",
             scrollbarWidth: "thin",
             scrollbarColor: "#333 transparent",
           }}
