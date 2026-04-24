@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight } from "./Icons";
+import { ChevronLeft, ChevronRight } from "../ui/Icons";
 
 export function CardRow({ children, scrollAmount = 640, resetKey }: {
   children: ReactNode;

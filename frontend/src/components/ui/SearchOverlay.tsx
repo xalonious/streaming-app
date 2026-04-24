@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { type SearchResult } from "../api/tmdb";
-import useDebounce from "../hooks/useDebounce";
-import { useTmdbSearch } from "../hooks/useTmdbSearch";
+import { type SearchResult } from "../../api/tmdb";
+import useDebounce from "../../hooks/useDebounce";
+import { useTmdbSearch } from "../../hooks/useTmdbSearch";
 import { SearchIcon, CloseIcon, PlayIcon, InfoIcon, StarIcon, ChevronDown, ClockIcon, CheckIcon } from "./Icons";
-import { useRecentQueries } from "../hooks/useRecentQueries";
+import { useRecentQueries } from "../../hooks/useRecentQueries";
 
 const STORAGE_KEY = "xalonstream:recentQueries";
 

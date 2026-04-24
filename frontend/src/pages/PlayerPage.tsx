@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft } from "../components/Icons";
+import { ChevronLeft } from "../components/ui/Icons";
 import { getMovieStream, getTvStream } from "../api/stream";
 import { useTitleDetails } from "../hooks/useTitleDetails";
 

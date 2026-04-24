@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { type SearchResult, getTitleImages } from "../api/tmdb";
-import { StarIcon, PlayIcon, InfoIcon } from "./Icons";
-import { useSlideshow } from "../hooks/useSlideshow";
+import { type SearchResult, getTitleImages } from "../../api/tmdb";
+import { StarIcon, PlayIcon, InfoIcon } from "../ui/Icons";
+import { useSlideshow } from "../../hooks/useSlideshow";
 
 export function HeroSection({ items, onPlay, onDetails }: {
   items: SearchResult[];

@@ -1,6 +1,6 @@
-import { type SearchResult } from "../api/tmdb";
+import { type SearchResult } from "../../api/tmdb";
 import { CardRow } from "./CardRow";
-import { MediaCard } from "./MediaCard";
+import { MediaCard } from "../cards/MediaCard";
 
 export function Top10Carousel({ items, onOpen }: {
   items: SearchResult[];

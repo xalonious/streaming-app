@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { trendingTmdb, topRatedTmdb, type SearchResult } from "../api/tmdb";
-import { Navbar } from "../components/Navbar";
-import { SearchOverlay } from "../components/SearchOverlay";
-import { HeroSection } from "../components/HeroSection";
-import { Top10Carousel } from "../components/Top10Carousel";
-import { TrendingRow } from "../components/TrendingRow";
-import { TopRatedRow } from "../components/TopRatedRow";
-import { GenreRow } from "../components/GenreRow";
+import { Navbar } from "../components/layout/Navbar";
+import { SearchOverlay } from "../components/ui/SearchOverlay";
+import { HeroSection } from "../components/layout/HeroSection";
+import { Top10Carousel } from "../components/rows/Top10Carousel";
+import { TrendingRow } from "../components/rows/TrendingRow";
+import { TopRatedRow } from "../components/rows/TopRatedRow";
+import { GenreRow } from "../components/rows/GenreRow";
 
 export default function HomePage() {
   const nav = useNavigate();

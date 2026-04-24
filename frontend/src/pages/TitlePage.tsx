@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useRecommendations } from "../hooks/useRecommendations";
-import { PlayIcon, StarIcon, SearchIcon, ChevronLeft } from "../components/Icons";
+import { PlayIcon, StarIcon, SearchIcon, ChevronLeft } from "../components/ui/Icons";
 import { useTitleMeta } from "../hooks/useTitleMeta";
-import { ActorCard } from "../components/ActorCard";
-import { SeasonDropdown } from "../components/SeasonDropdown";
-import { TrailerModal } from "../components/TrailerModal";
-import { RecommendationsGrid } from "../components/RecommendationsGrid";
+import { ActorCard } from "../components/cards/ActorCard";
+import { SeasonDropdown } from "../components/ui/SeasonDropdown";
+import { TrailerModal } from "../components/ui/TrailerModal";
+import { RecommendationsGrid } from "../components/rows/RecommendationsGrid";
 import { useTitleDetails, type ErrorLike } from "../hooks/useTitleDetails";
 import { useSeasonEpisodes } from "../hooks/useSeasonEpisodes";
 import { useCrossSeasonEpisodeSearch } from "../hooks/useCrossSeasonEpisodeSearch";

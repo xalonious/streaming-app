@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, CheckIcon } from "./Icons";
-import { useDropdown } from "../hooks/useDropdown";
+import { useDropdown } from "../../hooks/useDropdown";
 
 export function SeasonDropdown({
   seasons,

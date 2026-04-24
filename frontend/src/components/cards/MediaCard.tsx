@@ -1,5 +1,5 @@
-import { type SearchResult } from "../api/tmdb";
-import { StarIcon } from "./Icons";
+import { type SearchResult } from "../../api/tmdb";
+import { StarIcon } from "../ui/Icons";
 
 export function MediaCard({ item, onClick, rank }: {
   item: SearchResult;

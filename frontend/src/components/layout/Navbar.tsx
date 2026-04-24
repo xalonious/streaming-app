@@ -1,4 +1,4 @@
-import { PlayIcon, SearchIcon } from "./Icons";
+import { PlayIcon, SearchIcon } from "../ui/Icons";
 
 export function Navbar({ onSearchOpen }: { onSearchOpen: () => void }) {
   return (

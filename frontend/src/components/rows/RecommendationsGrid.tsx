@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { type SearchResult } from "../api/tmdb";
-import { StarIcon } from "./Icons";
+import { type SearchResult } from "../../api/tmdb";
+import { StarIcon } from "../ui/Icons";
 
 export function RecommendationsGrid({ items }: { items: SearchResult[] }) {
   if (!items.length) return null;

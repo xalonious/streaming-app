@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { type SearchResult, type Genre, getGenresTmdb, discoverByGenreTmdb } from "../api/tmdb";
-import { ChevronDown, CheckIcon } from "./Icons";
-import { useDropdown } from "../hooks/useDropdown";
+import { type SearchResult, type Genre, getGenresTmdb, discoverByGenreTmdb } from "../../api/tmdb";
+import { ChevronDown, CheckIcon } from "../ui/Icons";
+import { useDropdown } from "../../hooks/useDropdown";
 import { CardRow } from "./CardRow";
-import { MediaCard } from "./MediaCard";
+import { MediaCard } from "../cards/MediaCard";
 
 export function GenreRow({ onOpen }: { onOpen: (item: SearchResult) => void }) {
   const [mediaType, setMediaType] = useState<"movie" | "tv">("movie");
