@@ -10,6 +10,7 @@ import {
   tmdbTypeParamsSchema,
   tmdbDiscoverParamsSchema,
   tvSeasonParamsSchema,
+  tmdbPersonParamsSchema,
 } from "../validation/tmdbRoutes";
 
 const router = express.Router();
@@ -130,6 +131,16 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { type, genreId } = req.params as { type: "movie" | "tv"; genreId: string };
     const data = await tmdbService.discoverByGenre(type, Number(genreId));
+    res.status(200).json(data);
+  })
+);
+
+router.get(
+  "/person/:personId",
+  validateRequest({ params: tmdbPersonParamsSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { personId } = req.params as { personId: string };
+    const data = await tmdbService.getPersonDetails(Number(personId));
     res.status(200).json(data);
   })
 );

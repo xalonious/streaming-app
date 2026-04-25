@@ -74,3 +74,22 @@ export const discoverByGenreTmdb = async (type: "movie" | "tv", genreId: number)
   const res = await apiClient.get<{ results: SearchResult[] }>(`/tmdb/discover/${type}/${genreId}`);
   return res.data;
 };
+
+export type PersonDetails = {
+  id: number;
+  name: string;
+  biography?: string;
+  birthday?: string;
+  place_of_birth?: string;
+  known_for_department?: string;
+  profile_path?: string | null;
+  knownFor: SearchResult[];
+  movies: SearchResult[];
+  shows: SearchResult[];
+};
+ 
+export const getPersonDetailsTmdb = async (personId: number) => {
+  const res = await apiClient.get<PersonDetails>(`/tmdb/person/${personId}`);
+  return res.data;
+};
+ 

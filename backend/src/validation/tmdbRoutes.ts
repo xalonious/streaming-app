@@ -32,3 +32,7 @@ export const tmdbDiscoverParamsSchema = Joi.object({
   type: Joi.string().valid("movie", "tv").required(),
   genreId: Joi.number().integer().positive().required(),
 }).unknown(false);
+
+export const tmdbPersonParamsSchema = Joi.object({
+  personId: Joi.number().integer().positive().required(),
+}).unknown(false);

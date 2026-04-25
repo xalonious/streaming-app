@@ -256,3 +256,56 @@ export async function discoverByGenre(type: "movie" | "tv", genreId: number) {
     throw ServiceError.internalServerError(`TMDB discover failed: ${err.message}`);
   }
 }
+
+export async function getPersonDetails(personId: number) {
+  try {
+    const { data } = await client.get(`/person/${personId}`, {
+      params: { append_to_response: "combined_credits" },
+    });
+
+    const cast = (data?.combined_credits?.cast ?? []) as any[];
+
+    const dedupe = (arr: any[]) =>
+      arr.filter((c, i, a) => a.findIndex((x: any) => x.id === c.id && x.media_type === c.media_type) === i);
+
+    const isSelf = (c: any) =>
+      !c.character ||
+      ["self", "himself", "herself", "host", "narrator"].some((s) =>
+        c.character.toLowerCase().startsWith(s)
+      );
+
+    const knownFor = dedupe(
+      cast.filter((c) => c.poster_path && !isSelf(c) && (c.vote_count ?? 0) >= 100)
+    )
+      .sort((a: any, b: any) => (b.popularity ?? 0) - (a.popularity ?? 0))
+      .slice(0, 12)
+      .map(normalizeSearchResult);
+
+    const allCredits = dedupe(cast.filter((c) => c.poster_path));
+
+    const movies = allCredits
+      .filter((c: any) => c.media_type === "movie")
+      .sort((a: any, b: any) => (b.release_date ?? "").localeCompare(a.release_date ?? ""))
+      .map(normalizeSearchResult);
+
+    const shows = allCredits
+      .filter((c: any) => c.media_type === "tv")
+      .sort((a: any, b: any) => (b.first_air_date ?? "").localeCompare(a.first_air_date ?? ""))
+      .map(normalizeSearchResult);
+
+    return {
+      id: data.id,
+      name: data.name,
+      biography: data.biography,
+      birthday: data.birthday,
+      place_of_birth: data.place_of_birth,
+      known_for_department: data.known_for_department,
+      profile_path: data.profile_path,
+      knownFor,
+      movies,
+      shows,
+    };
+  } catch (err: any) {
+    throw ServiceError.internalServerError(`TMDB person details failed: ${err.message}`);
+  }
+}

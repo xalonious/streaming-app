@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const PROFILE_BASE = "https://image.tmdb.org/t/p/w185";
 
 type Actor = {
@@ -11,7 +13,10 @@ export function ActorCard({ actor }: { actor: Actor }) {
   const img = actor.profile_path ? `${PROFILE_BASE}${actor.profile_path}` : null;
 
   return (
-    <div className="flex items-center gap-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] rounded-2xl px-5 py-4 transition-colors">
+    <Link
+      to={`/actor/${actor.id}`}
+      className="flex items-center gap-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] rounded-2xl px-5 py-4 transition-colors"
+    >
       <div className="w-14 h-14 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/10">
         {img ? (
           <img src={img} alt={actor.name} className="w-full h-full object-cover" loading="lazy" />
@@ -25,6 +30,6 @@ export function ActorCard({ actor }: { actor: Actor }) {
           <div className="text-xs text-zinc-500 truncate mt-0.5">{actor.character}</div>
         )}
       </div>
-    </div>
+    </Link>
   );
 }
