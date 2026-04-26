@@ -1,68 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { usePersonDetails } from "../hooks/usePersonDetails";
 import { type SearchResult } from "../api/tmdb";
-import { ChevronLeft, ChevronRight, StarIcon } from "../components/ui/Icons";
+import { ChevronLeft } from "../components/ui/Icons";
+import { PosterCarousel } from "../components/rows/PosterCarousel";
 
 const PROFILE_BASE = "https://image.tmdb.org/t/p/w300";
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3 mb-5">
-      <div className="w-1 h-5 rounded-full bg-[#e50914]" />
-      <h2 className="text-white font-bold text-base sm:text-lg">{children}</h2>
-    </div>
-  );
-}
-
-function CreditCarousel({ title, credits }: { title: string; credits: SearchResult[] }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const scroll = (dir: "left" | "right") =>
-    scrollRef.current?.scrollBy({ left: dir === "left" ? -500 : 500, behavior: "smooth" });
-  if (!credits.length) return null;
-  return (
-    <section className="mb-10 px-4 sm:px-6">
-      <SectionHeading>{title}</SectionHeading>
-      <div className="relative group/carousel">
-        <button onClick={() => scroll("left")} className="absolute left-0 top-[38%] -translate-y-1/2 -translate-x-5 z-10 w-10 h-10 flex items-center justify-center bg-black/90 rounded-full border border-white/15 text-white opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200">
-          <ChevronLeft />
-        </button>
-        <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
-          {credits.map((credit: SearchResult) => {
-            return (
-              <Link
-                key={`${credit.type}-${credit.id}`}
-                to={`/title/${credit.type}/${credit.id}`}
-                className="group/card flex-shrink-0 block"
-                style={{ width: 160 }}
-              >
-                <div className="relative rounded-xl overflow-hidden ring-1 ring-white/10 group-hover/card:ring-white/30 transition-all duration-200 group-hover/card:scale-[1.02]">
-                  {credit.poster ? (
-                    <img src={credit.poster} alt={credit.title} className="w-full aspect-[2/3] object-cover" loading="lazy" />
-                  ) : (
-                    <div className="w-full aspect-[2/3] bg-zinc-800 flex items-center justify-center text-xs text-zinc-500 p-2 text-center">{credit.title}</div>
-                  )}
-                </div>
-                <div className="mt-2.5 px-0.5">
-                  <div className="text-white text-sm font-semibold truncate">{credit.title}</div>
-                  <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-zinc-400">
-                    {!!credit.vote_average && credit.vote_average >= 1 && (
-                      <span className="flex items-center gap-1"><StarIcon /><span className="text-zinc-300">{credit.vote_average.toFixed(1)}</span></span>
-                    )}
-                    {credit.year && <><span className="text-zinc-600">·</span><span>{credit.year}</span></>}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-        <button onClick={() => scroll("right")} className="absolute right-0 top-[38%] -translate-y-1/2 translate-x-5 z-10 w-10 h-10 flex items-center justify-center bg-black/90 rounded-full border border-white/15 text-white opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200">
-          <ChevronRight />
-        </button>
-      </div>
-    </section>
-  );
-}
 
 export default function ActorPage() {
   const { id } = useParams();
@@ -97,6 +40,7 @@ export default function ActorPage() {
   }
 
   const profileImg = data.profile_path ? `${PROFILE_BASE}${data.profile_path}` : null;
+  const openTitle = (item: SearchResult) => nav(`/title/${item.type}/${item.id}`);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
@@ -139,9 +83,9 @@ export default function ActorPage() {
       </div>
 
       <div className="pb-16 pt-8 mx-auto max-w-[1400px]">
-        <CreditCarousel title="Known for" credits={data.knownFor} />
-        <CreditCarousel title="Movies" credits={data.movies} />
-        <CreditCarousel title="TV Shows" credits={data.shows} />
+        <PosterCarousel title="Known for" items={data.knownFor} onOpen={openTitle} sectionClassName="mb-10 px-4 sm:px-6" />
+        <PosterCarousel title="Movies" items={data.movies} onOpen={openTitle} sectionClassName="mb-10 px-4 sm:px-6" />
+        <PosterCarousel title="TV Shows" items={data.shows} onOpen={openTitle} sectionClassName="mb-10 px-4 sm:px-6" />
       </div>
     </div>
   );

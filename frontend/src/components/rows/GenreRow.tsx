@@ -3,8 +3,8 @@ import { createPortal } from "react-dom";
 import { type SearchResult, type Genre, getGenresTmdb, discoverByGenreTmdb } from "../../api/tmdb";
 import { ChevronDown, CheckIcon } from "../ui/Icons";
 import { useDropdown } from "../../hooks/useDropdown";
-import { CardRow } from "./CardRow";
-import { MediaCard } from "../cards/MediaCard";
+import { MediaTypeToggle } from "../ui/MediaTypeToggle";
+import { PosterCarousel } from "./PosterCarousel";
 
 export function GenreRow({ onOpen }: { onOpen: (item: SearchResult) => void }) {
   const [mediaType, setMediaType] = useState<"movie" | "tv">("movie");
@@ -18,43 +18,42 @@ export function GenreRow({ onOpen }: { onOpen: (item: SearchResult) => void }) {
     getGenresTmdb(mediaType)
       .then(d => {
         setGenres(d.genres);
-        const match = activeGenre
-          ? d.genres.find(g =>
-              g.name.toLowerCase().includes(activeGenre.name.toLowerCase().split(" ")[0]) ||
-              activeGenre.name.toLowerCase().includes(g.name.toLowerCase().split(" ")[0])
-            )
-          : null;
-        setActiveGenre(match ?? d.genres[0] ?? null);
+        setActiveGenre(prev => {
+          const match = prev
+            ? d.genres.find(g =>
+                g.name.toLowerCase().includes(prev.name.toLowerCase().split(" ")[0]) ||
+                prev.name.toLowerCase().includes(g.name.toLowerCase().split(" ")[0])
+              )
+            : null;
+          return match ?? d.genres[0] ?? null;
+        });
       })
       .catch(() => {});
   }, [mediaType]);
 
   useEffect(() => {
     if (!activeGenre) return;
+    let cancelled = false;
     discoverByGenreTmdb(mediaType, activeGenre.id)
-      .then(d => setItems(d.results ?? []))
+      .then(d => { if (!cancelled) setItems(d.results ?? []); })
       .catch(() => {});
-  }, [activeGenre]);
+    return () => { cancelled = true; };
+  }, [activeGenre, mediaType]);
 
   return (
-    <section className="px-4 sm:px-6 py-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-1 h-5 rounded-full bg-[#e50914]" />
-          <h2 className="text-white font-bold text-base sm:text-lg">Browse by genre</h2>
-        </div>
-        <div className="flex items-center gap-1 p-1 bg-white/[0.06] rounded-xl border border-white/10">
-          <button
-            onClick={() => setMediaType("movie")}
-            className={`text-xs px-4 py-1.5 rounded-lg font-semibold transition ${mediaType === "movie" ? "bg-white text-black" : "text-zinc-400 hover:text-white"}`}
-          >Movies</button>
-          <button
-            onClick={() => setMediaType("tv")}
-            className={`text-xs px-4 py-1.5 rounded-lg font-semibold transition ${mediaType === "tv" ? "bg-white text-black" : "text-zinc-400 hover:text-white"}`}
-          >Series</button>
-        </div>
-      </div>
-
+    <PosterCarousel
+      title="Browse by genre"
+      items={items}
+      onOpen={onOpen}
+      resetKey={activeGenre?.id}
+      rightContent={
+        <MediaTypeToggle
+          value={mediaType}
+          options={[{ label: "Movies", value: "movie" }, { label: "Series", value: "tv" }]}
+          onChange={(v) => setMediaType(v)}
+        />
+      }
+    >
       <div ref={genreWrapRef} className="mb-5">
         <button
           ref={genreBtnRef}
@@ -98,12 +97,6 @@ export function GenreRow({ onOpen }: { onOpen: (item: SearchResult) => void }) {
           document.body
         )}
       </div>
-
-      <CardRow resetKey={activeGenre?.id}>
-        {items.map(item => (
-          <MediaCard key={item.id} item={item} onClick={() => onOpen(item)} />
-        ))}
-      </CardRow>
-    </section>
+    </PosterCarousel>
   );
 }

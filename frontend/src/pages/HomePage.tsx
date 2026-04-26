@@ -4,9 +4,8 @@ import { trendingTmdb, topRatedTmdb, type SearchResult } from "../api/tmdb";
 import { Navbar } from "../components/layout/Navbar";
 import { SearchOverlay } from "../components/ui/SearchOverlay";
 import { HeroSection } from "../components/layout/HeroSection";
-import { Top10Carousel } from "../components/rows/Top10Carousel";
-import { TrendingRow } from "../components/rows/TrendingRow";
-import { TopRatedRow } from "../components/rows/TopRatedRow";
+import { PosterCarousel } from "../components/rows/PosterCarousel";
+import { MediaTypeToggle } from "../components/ui/MediaTypeToggle";
 import { GenreRow } from "../components/rows/GenreRow";
 
 export default function HomePage() {
@@ -60,6 +59,8 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, [trendWindow]);
 
+  const openTitle = (item: SearchResult) => nav(`/title/${item.type}/${item.id}`);
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
       <Navbar onSearchOpen={() => setSearchOpen(true)} />
@@ -88,29 +89,46 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-        ) : mainItems.length > 0 ? (
-          <Top10Carousel items={mainItems} onOpen={(item) => nav(`/title/${item.type}/${item.id}`)} />
-        ) : null}
-        {trendingItems.length > 0 && (
-          <TrendingRow
-            items={trendingItems}
-            onOpen={(item) => nav(`/title/${item.type}/${item.id}`)}
-            trendWindow={trendWindow}
-            onTrendWindowChange={setTrendWindow}
+        ) : (
+          <PosterCarousel
+            title="TOP 10 Today"
+            items={mainItems.slice(0, 10)}
+            onOpen={openTitle}
+            badge
+            scrollAmount={500}
+            sectionClassName="px-4 sm:px-6 pt-4 pb-8"
           />
         )}
 
-        {topRatedItems.length > 0 && (
-          <TopRatedRow
-            items={topRatedItems}
-            onOpen={(item) => nav(`/title/${item.type}/${item.id}`)}
-            type={topRatedType}
-            onTypeChange={setTopRatedType}
-          />
-        )}
+        <PosterCarousel
+          title={<>Trending <span className="text-zinc-400 font-normal">Today</span></>}
+          items={trendingItems}
+          onOpen={openTitle}
+          resetKey={trendWindow}
+          rightContent={
+            <MediaTypeToggle
+              value={trendWindow}
+              options={[{ label: "Movies", value: "day" }, { label: "Series", value: "week" }]}
+              onChange={(v) => setTrendWindow(v)}
+            />
+          }
+        />
 
-        <GenreRow onOpen={(item) => nav(`/title/${item.type}/${item.id}`)} />
+        <PosterCarousel
+          title="Top rated"
+          items={topRatedItems}
+          onOpen={openTitle}
+          resetKey={topRatedType}
+          rightContent={
+            <MediaTypeToggle
+              value={topRatedType}
+              options={[{ label: "Movies", value: "movie" }, { label: "Series", value: "tv" }]}
+              onChange={(v) => setTopRatedType(v)}
+            />
+          }
+        />
 
+        <GenreRow onOpen={openTitle} />
       </div>
 
       <div className="h-16" />
