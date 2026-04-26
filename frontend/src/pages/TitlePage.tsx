@@ -27,8 +27,9 @@ export default function TitlePage() {
 
   const {
     data, loading, isError, isTv, isMovie,
-    title, year, genres,
+    title, year, overview, genres,
     backdropUrl: backdrop,
+    posterUrl,
     seasonOptions, initialSeasonNumber,
   } = useTitleDetails(tmdbId, type);
 
@@ -36,21 +37,24 @@ export default function TitlePage() {
   const [episodeFilter, setEpisodeFilter] = useState("");
   const [showTrailer, setShowTrailer] = useState(false);
 
+  const [prevKey, setPrevKey] = useState(`${type}-${id}`);
+  if (`${type}-${id}` !== prevKey) {
+    setPrevKey(`${type}-${id}`);
+    setEpisodeFilter("");
+    setShowTrailer(false);
+  }
+
+  const [prevData, setPrevData] = useState(data);
+  if (isTv && !isError && data && data !== prevData) {
+    setPrevData(data);
+    setSeasonNumber(initialSeasonNumber ?? 1);
+    setEpisodeFilter("");
+  }
+
   useEffect(() => {
     document.title = loading ? "Loading…" : title ? (year ? `${title} (${year})` : title) : "";
     return () => { document.title = ""; };
   }, [loading, title, year]);
-
-  useEffect(() => {
-    if (!isTv || isError || !data) return;
-    setSeasonNumber(initialSeasonNumber ?? 1);
-    setEpisodeFilter("");
-  }, [isTv, isError, data, initialSeasonNumber]);
-
-  useEffect(() => {
-    setEpisodeFilter("");
-    setShowTrailer(false);
-  }, [tmdbId, type]);
 
   useEffect(() => {
     if (!showTrailer) return;
@@ -139,9 +143,9 @@ export default function TitlePage() {
               <span key={g} className="contents"><span className="text-zinc-600">|</span><span>{g}</span></span>
             ))}
           </div>
-          {(data as any)?.overview && (
+          {overview && (
             <p className="text-sm text-zinc-300/90 leading-relaxed mb-6 max-w-lg line-clamp-3">
-              {(data as any).overview}
+              {overview}
             </p>
           )}
           <div className="flex flex-wrap items-center gap-3">
@@ -206,6 +210,8 @@ export default function TitlePage() {
                       <div className="relative flex-shrink-0 w-36 sm:w-44 aspect-video rounded-xl overflow-hidden bg-black/40">
                         {ep.still ? (
                           <img src={ep.still} alt={ep.name} className="w-full h-full object-cover transition group-hover:scale-[1.04]" loading="lazy" />
+                        ) : posterUrl ? (
+                          <img src={posterUrl} alt={title} className="w-full h-full object-cover object-top transition group-hover:scale-[1.04]" loading="lazy" />
                         ) : (
                           <div className="flex h-full items-center justify-center text-xs text-zinc-600">No image</div>
                         )}
