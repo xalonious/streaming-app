@@ -41,6 +41,7 @@ export function HeroSection({ items, onPlay, onDetails }: {
   if (!active) return null;
 
   const logoUrl = logos[cacheKey(active)] ?? null;
+  const hasRating = typeof active.vote_average === "number" && active.vote_average >= 1;
 
   return (
     <>
@@ -82,20 +83,31 @@ export function HeroSection({ items, onPlay, onDetails }: {
           className="absolute bottom-0 left-0 z-10 px-10 sm:px-16 pb-14 max-w-2xl"
           style={{ animation: "heroTextIn 0.6s ease 0.2s both", zIndex: 10 }}
         >
-          <div className="flex items-center flex-wrap gap-2 mb-3 text-xs text-zinc-300">
-            {typeof active.vote_average === "number" && active.vote_average >= 1 && (
-              <span className="flex items-center gap-1">
-                <StarIcon />
-                <span className="text-yellow-400 font-semibold">{active.vote_average.toFixed(1)}</span>
-              </span>
-            )}
-            {active.year && <>{typeof active.vote_average === "number" && active.vote_average >= 1 && <span className="text-zinc-600">|</span>}<span>{active.year}</span></>}
-          </div>
           {logoUrl ? (
             <img src={logoUrl} alt={active.title} className="h-20 sm:h-28 w-auto object-contain mb-3 drop-shadow-2xl" style={{ maxWidth: "380px" }} />
           ) : (
             <h1 className="text-4xl sm:text-5xl font-black text-white leading-tight mb-3 tracking-tight">{active.title}</h1>
           )}
+          <div className="flex items-center flex-wrap gap-2 mb-3 text-xs text-zinc-300">
+            {hasRating && (
+              <span className="flex items-center gap-1">
+                <StarIcon />
+                <span className="text-yellow-400 font-semibold">{active.vote_average!.toFixed(1)}</span>
+              </span>
+            )}
+            {active.year && (
+              <>
+                {hasRating && <span className="text-zinc-600">|</span>}
+                <span>{active.year}</span>
+              </>
+            )}
+            {active.genres?.slice(0, 3).map(g => (
+              <span key={g} className="contents">
+                <span className="text-zinc-600">|</span>
+                <span>{g}</span>
+              </span>
+            ))}
+          </div>
           {active.overview && (
             <p className="text-sm text-zinc-300/85 leading-relaxed mb-6 line-clamp-3 max-w-lg">{active.overview}</p>
           )}

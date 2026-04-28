@@ -11,6 +11,7 @@ export interface SearchResult {
   backdrop: string | null;
   overview: string;
   vote_average: number | null;
+  genres: string [];
 }
 
 export interface SearchResponse {

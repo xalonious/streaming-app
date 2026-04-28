@@ -17,19 +17,39 @@ const client = axios.create({
 const IMG_BASE = "https://image.tmdb.org/t/p/w500";
 const IMG_BASE_ORIGINAL = "https://image.tmdb.org/t/p/original";
 
+const MOVIE_GENRES: Record<number, string> = {
+  28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
+  80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
+  14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music",
+  9648: "Mystery", 10749: "Romance", 878: "Science Fiction",
+  10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western",
+};
+
+const TV_GENRES: Record<number, string> = {
+  10759: "Action & Adventure", 16: "Animation", 35: "Comedy",
+  80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
+  10762: "Kids", 9648: "Mystery", 10763: "News", 10764: "Reality",
+  10765: "Sci-Fi & Fantasy", 10766: "Soap", 10767: "Talk",
+  10768: "War & Politics", 37: "Western",
+};
+
 function normalizeSearchResult(r: any) {
   const type = (r.media_type ?? (r.title ? "movie" : "tv")) as "movie" | "tv";
+  const genreMap = type === "movie" ? MOVIE_GENRES : TV_GENRES;
+  const genres: string[] = Array.isArray(r.genres)
+    ? r.genres.map((g: any) => g.name)
+    : (r.genre_ids ?? []).map((id: number) => genreMap[id]).filter(Boolean);
+
   return {
     id: r.id,
     type,
     title: r.title ?? r.name ?? "",
-    year: ((r.release_date ?? r.first_air_date ?? "").slice(0, 4) || null) as
-      | string
-      | null,
+    year: ((r.release_date ?? r.first_air_date ?? "").slice(0, 4) || null) as string | null,
     poster: r.poster_path ? `${IMG_BASE}${r.poster_path}` : null,
     backdrop: r.backdrop_path ? `${IMG_BASE_ORIGINAL}${r.backdrop_path}` : null,
     overview: r.overview ?? "",
     vote_average: typeof r.vote_average === "number" ? Math.round(r.vote_average * 10) / 10 : null,
+    genres,
   };
 }
 
@@ -46,16 +66,11 @@ export async function search(
 
   try {
     const { data } = await client.get(endpoint, {
-      params: {
-        query,
-        include_adult: false,
-      },
+      params: { query, include_adult: false },
     });
-
     const results = (data?.results ?? [])
       .filter((r: any) => r.media_type !== "person")
       .map(normalizeSearchResult);
-
     return { results };
   } catch (err: any) {
     throw ServiceError.internalServerError(`TMDB search failed: ${err.message}`);
@@ -66,24 +81,16 @@ export async function getTrending(
   type: "all" | "movie" | "tv" = "all",
   window: "day" | "week" = "day"
 ) {
-  const endpoint = `/trending/${type}/${window}`;
-
   try {
-    const { data } = await client.get(endpoint, {
-      params: {
-        include_adult: false,
-      },
+    const { data } = await client.get(`/trending/${type}/${window}`, {
+      params: { include_adult: false },
     });
-
     const results = (data?.results ?? [])
       .filter((r: any) => r.media_type !== "person")
       .map(normalizeSearchResult);
-
     return { results };
   } catch (err: any) {
-    throw ServiceError.internalServerError(
-      `TMDB trending failed: ${err.message}`
-    );
+    throw ServiceError.internalServerError(`TMDB trending failed: ${err.message}`);
   }
 }
 
@@ -97,9 +104,7 @@ export async function getMovieDetails(tmdbId: number) {
     if (err?.response?.status === 404) {
       throw ServiceError.notFound(`Movie not found: ${tmdbId}`);
     }
-    throw ServiceError.internalServerError(
-      `TMDB movie details failed: ${err.message}`
-    );
+    throw ServiceError.internalServerError(`TMDB movie details failed: ${err.message}`);
   }
 }
 
@@ -113,9 +118,7 @@ export async function getTvDetails(tmdbId: number) {
     if (err?.response?.status === 404) {
       throw ServiceError.notFound(`TV show not found: ${tmdbId}`);
     }
-    throw ServiceError.internalServerError(
-      `TMDB tv details failed: ${err.message}`
-    );
+    throw ServiceError.internalServerError(`TMDB tv details failed: ${err.message}`);
   }
 }
 
@@ -125,39 +128,26 @@ export async function getTvSeasonDetails(tmdbId: number, season: number) {
     return data;
   } catch (err: any) {
     if (err?.response?.status === 404) {
-      throw ServiceError.notFound(
-        `Season not found: tv=${tmdbId} season=${season}`
-      );
+      throw ServiceError.notFound(`Season not found: tv=${tmdbId} season=${season}`);
     }
-    throw ServiceError.internalServerError(
-      `TMDB season details failed: ${err.message}`
-    );
+    throw ServiceError.internalServerError(`TMDB season details failed: ${err.message}`);
   }
 }
 
 export async function getTvAllEpisodes(tmdbId: number) {
   const tv = await getTvDetails(tmdbId);
-
   const seasons: Array<{ season_number: number; id?: number; name?: string }> =
     Array.isArray(tv?.seasons) ? tv.seasons : [];
 
   if (seasons.length === 0) {
-    return {
-      tmdbId,
-      tvId: tv?.id ?? tmdbId,
-      episodes: [],
-      totalEpisodes: 0,
-      totalSeasons: 0,
-    };
+    return { tmdbId, tvId: tv?.id ?? tmdbId, episodes: [], totalEpisodes: 0, totalSeasons: 0 };
   }
 
   try {
     const seasonDetails = await Promise.all(
       seasons.map(async (s) => {
         const seasonNumber = Number(s.season_number);
-        const { data } = await client.get(
-          `/tv/${tmdbId}/season/${seasonNumber}`
-        );
+        const { data } = await client.get(`/tv/${tmdbId}/season/${seasonNumber}`);
         return { seasonNumber, data };
       })
     );
@@ -187,24 +177,17 @@ export async function getTvAllEpisodes(tmdbId: number) {
       totalSeasons: seasons.length,
     };
   } catch (err: any) {
-    throw ServiceError.internalServerError(
-      `TMDB all episodes failed: ${err.message}`
-    );
+    throw ServiceError.internalServerError(`TMDB all episodes failed: ${err.message}`);
   }
 }
 
-export async function getRecommendations(
-  tmdbId: number,
-  type: "movie" | "tv"
-) {
+export async function getRecommendations(tmdbId: number, type: "movie" | "tv") {
   try {
     const { data } = await client.get(`/${type}/${tmdbId}/recommendations`);
     const results = (data?.results ?? []).map(normalizeSearchResult);
     return { results };
   } catch (err: any) {
-    throw ServiceError.internalServerError(
-      `TMDB recommendations failed: ${err.message}`
-    );
+    throw ServiceError.internalServerError(`TMDB recommendations failed: ${err.message}`);
   }
 }
 
