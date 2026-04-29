@@ -225,6 +225,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
               {results.map((item, i) => {
                 const key = `${item.type}:${item.id}`;
                 const isExpanded = expandedId === key;
+                const hasRating = typeof item.vote_average === "number" && item.vote_average >= 1;
                 return (
                   <div
                     key={key}
@@ -245,11 +246,11 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                         <div className="flex flex-wrap items-center gap-1 mt-0.5 text-[11px] text-zinc-400">
                           <span>{item.type === "tv" ? "TV Show" : "Movie"}</span>
                           {item.year && <><span className="text-zinc-600">|</span><span>{item.year}</span></>}
-                          {item.vote_average && (
+                          {hasRating && (
                             <><span className="text-zinc-600">|</span>
                             <span className="flex items-center gap-1">
                               <StarIcon />
-                              {item.vote_average.toFixed(1)}
+                              {item.vote_average!.toFixed(1)}
                             </span></>
                           )}
                         </div>
