@@ -53,6 +53,30 @@ function normalizeSearchResult(r: any) {
   };
 }
 
+function getKnownForScore(c: any) {
+  const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
+  const character = String(c?.character ?? "").trim().toLowerCase();
+  const isSelf = !character || ["self", "himself", "herself", "host", "narrator"].some((role) => character.startsWith(role));
+  const isVoice = character.includes("voice");
+
+  if (!c.poster_path || isSelf || (c.vote_count ?? 0) < 50) return null;
+
+  let roleWeight = 0.4;
+  if (c.media_type === "tv") {
+    const episodes = Number(c.episode_count ?? 0);
+    if (episodes < 2 || (episodes < 5 && isVoice)) return null;
+    roleWeight = episodes === 2 ? 0.22 : clamp(Math.log1p(episodes) / Math.log1p(60), 0.28, 1);
+  } else if (typeof c.order === "number") {
+    roleWeight = clamp(1 - c.order / 20, 0.18, 1);
+  }
+
+  const popularityScore = clamp(Math.log1p(c.popularity ?? 0) / Math.log1p(350));
+  const voteCountScore = clamp(Math.log1p(c.vote_count ?? 0) / Math.log1p(8000));
+  const ratingScore = clamp(((c.vote_average ?? 0) - 4) / 4);
+
+  return roleWeight * 55 + popularityScore * 25 + voteCountScore * 12 + ratingScore * 8;
+}
+
 export async function search(
   query: string,
   type: "multi" | "movie" | "tv" = "multi"
@@ -274,16 +298,12 @@ export async function getPersonDetails(personId: number) {
     const dedupe = (arr: any[]) =>
       arr.filter((c, i, a) => a.findIndex((x: any) => x.id === c.id && x.media_type === c.media_type) === i);
 
-    const isSelf = (c: any) =>
-      !c.character ||
-      ["self", "himself", "herself", "host", "narrator"].some((s) =>
-        c.character.toLowerCase().startsWith(s)
-      );
-
     const knownFor = dedupe(
-      cast.filter((c) => c.poster_path && !isSelf(c) && (c.vote_count ?? 0) >= 100)
+      cast
+        .map((c) => ({ ...c, knownForScore: getKnownForScore(c) }))
+        .filter((c) => c.knownForScore !== null)
     )
-      .sort((a: any, b: any) => (b.popularity ?? 0) - (a.popularity ?? 0))
+      .sort((a: any, b: any) => b.knownForScore - a.knownForScore)
       .slice(0, 12)
       .map(normalizeSearchResult);
 
