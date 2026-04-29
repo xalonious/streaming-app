@@ -191,6 +191,29 @@ export async function getRecommendations(tmdbId: number, type: "movie" | "tv") {
   }
 }
 
+export async function getCollection(collectionId: number) {
+  try {
+    const { data } = await client.get(`/collection/${collectionId}`);
+    const parts = (data?.parts ?? [])
+      .map((part: any) => normalizeSearchResult({ ...part, media_type: "movie" }))
+      .sort((a: any, b: any) => (a.year ?? "9999").localeCompare(b.year ?? "9999"));
+
+    return {
+      id: data?.id,
+      name: data?.name ?? "",
+      overview: data?.overview ?? "",
+      poster: data?.poster_path ? `${IMG_BASE}${data.poster_path}` : null,
+      backdrop: data?.backdrop_path ? `${IMG_BASE_ORIGINAL}${data.backdrop_path}` : null,
+      parts,
+    };
+  } catch (err: any) {
+    if (err?.response?.status === 404) {
+      throw ServiceError.notFound(`Collection not found: ${collectionId}`);
+    }
+    throw ServiceError.internalServerError(`TMDB collection failed: ${err.message}`);
+  }
+}
+
 export async function getImages(tmdbId: number, type: "movie" | "tv") {
   try {
     const { data } = await client.get(`/${type}/${tmdbId}/images`, {

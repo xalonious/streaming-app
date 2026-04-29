@@ -86,6 +86,16 @@ router.get(
 );
 
 router.get(
+  "/collection/:tmdbId",
+  validateRequest({ params: tmdbIdParamsSchema }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { tmdbId } = req.params as { tmdbId: string };
+    const data = await tmdbService.getCollection(Number(tmdbId));
+    res.status(200).json(data);
+  })
+);
+
+router.get(
   "/:type/:tmdbId/recommendations",
   validateRequest({ params: tmdbRecommendationsParamsSchema }),
   asyncHandler(async (req: Request, res: Response) => {

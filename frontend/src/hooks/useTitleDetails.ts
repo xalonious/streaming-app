@@ -7,6 +7,12 @@ const img = (path?: string | null, size: string = "w1280") =>
   path ? `${TMDB_IMG}${size}${path}` : null;
 
 export type TmdbGenre = { id: number; name: string };
+export type TmdbCollectionSummary = {
+  id: number;
+  name: string;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+};
 
 export type TmdbMovie = {
   title?: string;
@@ -17,6 +23,7 @@ export type TmdbMovie = {
   poster_path?: string | null;
   runtime?: number;
   genres?: TmdbGenre[];
+  belongs_to_collection?: TmdbCollectionSummary | null;
 };
 
 export type TmdbTvSeasonSummary = { id?: number; season_number: number; name?: string };

@@ -2,14 +2,14 @@ import { Link } from "react-router-dom";
 import { type SearchResult } from "../../api/tmdb";
 import { StarIcon } from "../ui/Icons";
 
-export function RecommendationsGrid({ items }: { items: SearchResult[] }) {
+export function RecommendationsGrid({ items, title = "You may like" }: { items: SearchResult[]; title?: string }) {
   if (!items.length) return null;
 
   return (
     <section className="mt-12">
       <div className="flex items-center gap-3 mb-5">
         <div className="w-1 h-5 rounded-full bg-[#e50914]" />
-        <h2 className="text-white font-bold text-base sm:text-lg">You may like</h2>
+        <h2 className="text-white font-bold text-base sm:text-lg">{title}</h2>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
         {items.slice(0, 18).map(item => (

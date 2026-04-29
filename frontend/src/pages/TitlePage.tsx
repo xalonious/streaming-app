@@ -10,6 +10,7 @@ import { RecommendationsGrid } from "../components/rows/RecommendationsGrid";
 import { useTitleDetails, type ErrorLike } from "../hooks/useTitleDetails";
 import { useSeasonEpisodes } from "../hooks/useSeasonEpisodes";
 import { useCrossSeasonEpisodeSearch } from "../hooks/useCrossSeasonEpisodeSearch";
+import { useCollection } from "../hooks/useCollection";
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -73,6 +74,10 @@ export default function TitlePage() {
 
   const { runtime, numberOfSeasons, rating, trailer, trailerEmbedUrl, trailerModalUrl, fullCast, logoUrl } = useTitleMeta(data, isMovie, isTv, tmdbId, type);
 
+  const collectionSummary = isMovie && data && !(data as ErrorLike).__error
+    ? (data as any).belongs_to_collection
+    : null;
+  const collection = useCollection(collectionSummary?.id);
   const recommendations = useRecommendations(tmdbId, type);
 
   if (loading || !data) {
@@ -256,6 +261,12 @@ export default function TitlePage() {
               ))}
             </div>
           </section>
+        )}
+        {collection && collection.parts.length > 1 && (
+          <RecommendationsGrid
+            title={`Watch the whole ${collection.name}`}
+            items={collection.parts}
+          />
         )}
         <RecommendationsGrid items={recommendations} />
       </div>

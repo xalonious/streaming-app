@@ -52,6 +52,20 @@ export const recommendationsTmdb = async (
   return res.data;
 };
 
+export interface CollectionResponse {
+  id: number;
+  name: string;
+  overview: string;
+  poster: string | null;
+  backdrop: string | null;
+  parts: SearchResult[];
+}
+
+export const getCollectionTmdb = async (collectionId: number) => {
+  const res = await apiClient.get<CollectionResponse>(`/tmdb/collection/${collectionId}`);
+  return res.data;
+};
+
 export const getTitleImages = async (type: "movie" | "tv", tmdbId: number) => {
   const res = await apiClient.get<{ logoUrl: string | null }>(
     `/tmdb/${type}/${tmdbId}/images`
