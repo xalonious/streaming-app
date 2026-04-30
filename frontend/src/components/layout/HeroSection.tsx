@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { type SearchResult, getTitleImages } from "../../api/tmdb";
 import { StarIcon, PlayIcon, InfoIcon } from "../ui/Icons";
 import { useSlideshow } from "../../hooks/useSlideshow";
+import { getTvDetails } from "../../api/details";
 
 export function HeroSection({ items, onPlay, onDetails }: {
   items: SearchResult[];
@@ -9,6 +10,7 @@ export function HeroSection({ items, onPlay, onDetails }: {
   onDetails: (item: SearchResult) => void;
 }) {
   const [logos, setLogos] = useState<Record<string, string | null>>({});
+  const [seasonCounts, setSeasonCounts] = useState<Record<string, number | null>>({});
 
   const top10 = items.slice(0, 10);
   const { activeIdx, prevIdx, goTo } = useSlideshow(top10.length);
@@ -28,11 +30,27 @@ export function HeroSection({ items, onPlay, onDetails }: {
     });
   }
 
+  function prefetchSeasonCount(item: SearchResult) {
+    if (item.type !== "tv") return;
+    const key = cacheKey(item);
+    setSeasonCounts(prev => {
+      if (key in prev) return prev;
+      getTvDetails(item.id)
+        .then(d => setSeasonCounts(p => ({ ...p, [key]: typeof d.number_of_seasons === "number" ? d.number_of_seasons : null })))
+        .catch(() => setSeasonCounts(p => ({ ...p, [key]: null })));
+      return { ...prev, [key]: null };
+    });
+  }
+
   useEffect(() => {
     if (!top10.length) return;
     prefetch(top10[activeIdx]);
+    prefetchSeasonCount(top10[activeIdx]);
     const next = top10[(activeIdx + 1) % top10.length];
-    if (next) prefetch(next);
+    if (next) {
+      prefetch(next);
+      prefetchSeasonCount(next);
+    }
   }, [activeIdx, top10.length]);
 
   const active = top10[activeIdx];
@@ -42,6 +60,7 @@ export function HeroSection({ items, onPlay, onDetails }: {
 
   const logoUrl = logos[cacheKey(active)] ?? null;
   const hasRating = typeof active.vote_average === "number" && active.vote_average >= 1;
+  const numberOfSeasons = active.type === "tv" ? seasonCounts[cacheKey(active)] : null;
 
   return (
     <>
@@ -99,6 +118,12 @@ export function HeroSection({ items, onPlay, onDetails }: {
               <>
                 {hasRating && <span className="text-zinc-600">|</span>}
                 <span>{active.year}</span>
+              </>
+            )}
+            {!!numberOfSeasons && (
+              <>
+                <span className="text-zinc-600">|</span>
+                <span>{numberOfSeasons} season{numberOfSeasons > 1 ? "s" : ""}</span>
               </>
             )}
             {active.genres?.slice(0, 3).map(g => (
