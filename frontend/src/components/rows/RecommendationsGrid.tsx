@@ -2,8 +2,18 @@ import { Link } from "react-router-dom";
 import { type SearchResult } from "../../api/tmdb";
 import { StarIcon } from "../ui/Icons";
 
-export function RecommendationsGrid({ items, title = "You may like" }: { items: SearchResult[]; title?: string }) {
+export function RecommendationsGrid({
+  items,
+  title = "You may like",
+  limit = 18,
+}: {
+  items: SearchResult[];
+  title?: string;
+  limit?: number | null;
+}) {
   if (!items.length) return null;
+
+  const visibleItems = limit == null ? items : items.slice(0, limit);
 
   return (
     <section className="mt-12">
@@ -12,7 +22,7 @@ export function RecommendationsGrid({ items, title = "You may like" }: { items: 
         <h2 className="text-white font-bold text-base sm:text-lg">{title}</h2>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
-        {items.slice(0, 18).map(item => (
+        {visibleItems.map(item => (
           <Link key={item.id} to={`/title/${item.type}/${item.id}`} className="group block">
             <div className="relative rounded-xl overflow-hidden ring-1 ring-white/10 group-hover:ring-white/30 transition-all duration-200 group-hover:scale-[1.02]">
               {item.backdrop ?? item.poster ? (

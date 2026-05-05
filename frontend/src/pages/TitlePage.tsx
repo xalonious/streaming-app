@@ -266,6 +266,7 @@ export default function TitlePage() {
           <RecommendationsGrid
             title={`Watch the whole ${collection.name}`}
             items={collection.parts}
+            limit={null}
           />
         )}
         <RecommendationsGrid items={recommendations} />
