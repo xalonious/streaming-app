@@ -46,6 +46,8 @@ export function GenreRow({ onOpen }: { onOpen: (item: SearchResult) => void }) {
       items={items}
       onOpen={onOpen}
       resetKey={activeGenre?.id}
+      cardVariant="backdrop"
+      scrollItems={4}
       rightContent={
         <MediaTypeToggle
           value={mediaType}

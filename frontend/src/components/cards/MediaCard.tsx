@@ -1,18 +1,36 @@
 import { type SearchResult } from "../../api/tmdb";
 import { StarIcon } from "../ui/Icons";
 
-export function MediaCard({ item, onClick, rank }: {
+export type MediaCardVariant = "poster" | "backdrop";
+
+export function MediaCard({ item, onClick, rank, variant = "poster", imageLoading = "lazy" }: {
   item: SearchResult;
   onClick: () => void;
   rank?: number;
+  variant?: MediaCardVariant;
+  imageLoading?: "eager" | "lazy";
 }) {
+  const isBackdrop = variant === "backdrop";
+  const imageSrc = isBackdrop ? item.backdrop ?? item.poster : item.poster;
+
   return (
-    <button onClick={onClick} className="flex-shrink-0 group/card text-left" style={{ width: 200 }}>
+    <button
+      onClick={onClick}
+      className={`flex-shrink-0 group/card text-left ${isBackdrop ? "w-[260px] sm:w-[320px]" : "w-[200px]"}`}
+    >
       <div className="relative rounded-xl overflow-hidden ring-1 ring-white/10 group-hover/card:ring-white/30 transition-all duration-200 group-hover/card:scale-[1.02]">
-        {item.poster ? (
-          <img src={item.poster} alt={item.title} className="w-full aspect-[2/3] object-cover" loading="lazy" />
+        {imageSrc ? (
+          <img
+            src={imageSrc}
+            alt={item.title}
+            className={`w-full ${isBackdrop ? "aspect-video" : "aspect-[2/3]"} object-cover`}
+            loading={imageLoading}
+            decoding="async"
+          />
         ) : (
-          <div className="w-full aspect-[2/3] bg-white/5 flex items-center justify-center text-xs text-zinc-500 p-2 text-center">{item.title}</div>
+          <div className={`w-full ${isBackdrop ? "aspect-video" : "aspect-[2/3]"} bg-white/5 flex items-center justify-center text-xs text-zinc-500 p-2 text-center`}>
+            {item.title}
+          </div>
         )}
         {rank !== undefined && (
           <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/80 border border-white/20 flex items-center justify-center">

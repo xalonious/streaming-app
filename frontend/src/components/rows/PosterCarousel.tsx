@@ -1,7 +1,7 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { type SearchResult } from "../../api/tmdb";
 import { CardRow } from "./CardRow";
-import { MediaCard } from "../cards/MediaCard";
+import { MediaCard, type MediaCardVariant } from "../cards/MediaCard";
 
 export function PosterCarousel({
   title,
@@ -12,6 +12,8 @@ export function PosterCarousel({
   children,
   resetKey,
   scrollAmount,
+  scrollItems,
+  cardVariant = "poster",
   sectionClassName = "px-4 sm:px-6 py-6",
 }: {
   title: ReactNode;
@@ -22,9 +24,24 @@ export function PosterCarousel({
   children?: ReactNode;
   resetKey?: unknown;
   scrollAmount?: number;
+  scrollItems?: number;
+  cardVariant?: MediaCardVariant;
   sectionClassName?: string;
 }) {
+  const preloadPageSize = cardVariant === "backdrop" ? scrollItems ?? 4 : 0;
+  const initialEagerImageCount = preloadPageSize * 2;
+  const [eagerImageCount, setEagerImageCount] = useState(initialEagerImageCount);
+
+  useEffect(() => {
+    setEagerImageCount(initialEagerImageCount);
+  }, [initialEagerImageCount, resetKey, items.length]);
+
   if (!items.length) return null;
+
+  const preloadMoreImages = () => {
+    if (!preloadPageSize) return;
+    setEagerImageCount(count => Math.min(items.length, count + preloadPageSize));
+  };
 
   return (
     <section className={sectionClassName}>
@@ -36,9 +53,21 @@ export function PosterCarousel({
         {rightContent}
       </div>
       {children}
-      <CardRow resetKey={resetKey} scrollAmount={scrollAmount}>
+      <CardRow
+        resetKey={resetKey}
+        scrollAmount={scrollAmount}
+        scrollItems={scrollItems}
+        onScrollIntent={preloadMoreImages}
+      >
         {items.map((item, idx) => (
-          <MediaCard key={item.id} item={item} onClick={() => onOpen(item)} rank={badge ? idx + 1 : undefined} />
+          <MediaCard
+            key={item.id}
+            item={item}
+            onClick={() => onOpen(item)}
+            rank={badge ? idx + 1 : undefined}
+            variant={cardVariant}
+            imageLoading={idx < eagerImageCount ? "eager" : "lazy"}
+          />
         ))}
       </CardRow>
     </section>

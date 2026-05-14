@@ -105,6 +105,8 @@ export default function HomePage() {
           items={trendingItems}
           onOpen={openTitle}
           resetKey={trendWindow}
+          cardVariant="backdrop"
+          scrollItems={4}
           rightContent={
             <MediaTypeToggle
               value={trendWindow}
@@ -119,6 +121,8 @@ export default function HomePage() {
           items={topRatedItems}
           onOpen={openTitle}
           resetKey={topRatedType}
+          cardVariant="backdrop"
+          scrollItems={4}
           rightContent={
             <MediaTypeToggle
               value={topRatedType}
