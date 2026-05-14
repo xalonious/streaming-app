@@ -12,6 +12,7 @@ export function MediaCard({ item, onClick, rank, variant = "poster", imageLoadin
 }) {
   const isBackdrop = variant === "backdrop";
   const imageSrc = isBackdrop ? item.backdrop ?? item.poster : item.poster;
+  const rankLabel = rank?.toString().padStart(2, "0");
 
   return (
     <button
@@ -33,8 +34,13 @@ export function MediaCard({ item, onClick, rank, variant = "poster", imageLoadin
           </div>
         )}
         {rank !== undefined && (
-          <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/80 border border-white/20 flex items-center justify-center">
-            <span className="text-white text-xs font-black">{rank}</span>
+          <div
+            className="absolute left-0 top-0 flex h-11 w-8 flex-col items-center justify-start bg-[#e50914] pt-1 text-white shadow-[0_6px_14px_rgba(0,0,0,0.35)]"
+            style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%)" }}
+            aria-label={`Top ${rank}`}
+          >
+            <span className="text-[8px] font-black leading-none tracking-wide">TOP</span>
+            <span className="text-[10px] font-black leading-tight">{rankLabel}</span>
           </div>
         )}
       </div>
