@@ -102,8 +102,22 @@ export default function ActorPage() {
 
       <div className="pb-16 pt-6 sm:pt-8 mx-auto max-w-[1400px]">
         <PosterCarousel title="Known for" items={data.knownFor} onOpen={openTitle} sectionClassName="mb-8 sm:mb-10 px-4 sm:px-6" />
-        <PosterCarousel title="Movies" items={data.movies} onOpen={openTitle} sectionClassName="mb-8 sm:mb-10 px-4 sm:px-6" />
-        <PosterCarousel title="TV Shows" items={data.shows} onOpen={openTitle} sectionClassName="mb-8 sm:mb-10 px-4 sm:px-6" />
+        <PosterCarousel
+          title="Movies"
+          items={data.movies}
+          onOpen={openTitle}
+          cardVariant="backdrop"
+          scrollItems={4}
+          sectionClassName="mb-8 sm:mb-10 px-4 sm:px-6"
+        />
+        <PosterCarousel
+          title="TV Shows"
+          items={data.shows}
+          onOpen={openTitle}
+          cardVariant="backdrop"
+          scrollItems={4}
+          sectionClassName="mb-8 sm:mb-10 px-4 sm:px-6"
+        />
       </div>
     </div>
   );
