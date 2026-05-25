@@ -8,6 +8,8 @@ import { SearchIcon, CloseIcon, PlayIcon, InfoIcon, StarIcon, ChevronDown, Clock
 import { useRecentQueries } from "../../hooks/useRecentQueries";
 
 const STORAGE_KEY = "xalonstream:recentQueries";
+const RECENT_CLEAR_ROW_MS = 220;
+const RECENT_CLEAR_STAGGER_MS = 25;
 
 export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   const nav = useNavigate();
@@ -26,12 +28,16 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   const prevResultsRef = useRef<SearchResult[]>([]);
   const bodyRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+  const clearRecentTimerRef = useRef<number | null>(null);
 
   const dq = useDebounce(q, 350);
   const trimmed = dq.trim();
 
   const { results, loading } = useTmdbSearch({ query: trimmed, type: filterType, enabled: trimmed.length >= 2 });
   const { recent, commit, clear } = useRecentQueries(STORAGE_KEY);
+  const [clearingRecentSnapshot, setClearingRecentSnapshot] = useState<string[] | null>(null);
+  const visibleRecent = clearingRecentSnapshot ?? recent;
+  const clearingRecent = clearingRecentSnapshot !== null;
 
   useEffect(() => {
     if (results !== prevResultsRef.current) {
@@ -41,7 +47,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   }, [results]);
 
   useEffect(() => {
-    if (!q && recent.length === 0) {
+    if (!q && visibleRecent.length === 0) {
       setBodyHeight(0);
       return;
     }
@@ -49,7 +55,15 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
       const el = innerRef.current;
       if (el) setBodyHeight(el.scrollHeight);
     });
-  }, [results, q, recent]);
+  }, [results, q, visibleRecent, clearingRecent]);
+
+  useEffect(() => {
+    return () => {
+      if (clearRecentTimerRef.current !== null) {
+        window.clearTimeout(clearRecentTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -98,6 +112,23 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
     commit(q.trim());
     nav(`/title/${item.type}/${item.id}`);
     onClose();
+  }
+
+  function handleClearRecent() {
+    if (clearingRecent || visibleRecent.length === 0) return;
+
+    if (clearRecentTimerRef.current !== null) {
+      window.clearTimeout(clearRecentTimerRef.current);
+    }
+
+    setClearingRecentSnapshot(visibleRecent);
+    clear();
+
+    const totalDuration = RECENT_CLEAR_ROW_MS + (visibleRecent.length - 1) * RECENT_CLEAR_STAGGER_MS;
+    clearRecentTimerRef.current = window.setTimeout(() => {
+      setClearingRecentSnapshot(null);
+      clearRecentTimerRef.current = null;
+    }, totalDuration);
   }
 
   const filterLabel = filterType === "multi" ? "Movies & TV Shows" : filterType === "movie" ? "Movies" : "TV Shows";
@@ -194,27 +225,57 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
           </div>
           <div ref={bodyRef} style={{ height: bodyHeight !== null ? bodyHeight : "auto", maxHeight: "58vh", overflowY: "auto", transition: "height 400ms cubic-bezier(0.4, 0, 0.2, 1)", scrollbarWidth: "thin", scrollbarColor: "#2a2a2a transparent" }}>
           <div ref={innerRef}>
-            {!q && recent.length > 0 && (
-              <div className="px-5 py-3 border-t border-white/[0.06]">
-                <div className="flex items-center justify-between mb-2.5">
+            {!q && visibleRecent.length > 0 && (
+              <div
+                className="px-5 border-t overflow-hidden"
+                style={{
+                  borderColor: clearingRecent ? "rgba(255,255,255,0)" : "rgba(255,255,255,0.06)",
+                  paddingTop: clearingRecent ? 0 : 12,
+                  paddingBottom: clearingRecent ? 0 : 12,
+                  transition: `padding ${RECENT_CLEAR_ROW_MS}ms ease, border-color ${RECENT_CLEAR_ROW_MS}ms ease`,
+                }}
+              >
+                <div
+                  className="flex items-center justify-between"
+                  style={{
+                    maxHeight: clearingRecent ? 0 : 20,
+                    marginBottom: clearingRecent ? 0 : 10,
+                    opacity: clearingRecent ? 0 : 1,
+                    transform: clearingRecent ? "translateY(-4px)" : "translateY(0)",
+                    transition: `max-height ${RECENT_CLEAR_ROW_MS}ms ease, margin-bottom ${RECENT_CLEAR_ROW_MS}ms ease, opacity ${RECENT_CLEAR_ROW_MS}ms ease, transform ${RECENT_CLEAR_ROW_MS}ms ease`,
+                  }}
+                >
                   <span className="text-[11px] text-zinc-500 uppercase tracking-widest">Recent</span>
-                  <button onClick={clear} className="text-[11px] text-zinc-500 hover:text-zinc-300 bg-transparent border-none cursor-pointer transition-colors">Clear</button>
-                </div>
-                {recent.map((r, i) => (
                   <button
-                    key={r}
-                    onClick={() => setQ(r)}
-                    className="flex items-center gap-2.5 w-full px-1 py-2 bg-transparent border-none cursor-pointer text-zinc-300 hover:text-white text-sm text-left transition-colors"
-                    style={{
-                      opacity: show ? 1 : 0,
-                      transform: show ? "translateY(0)" : "translateY(6px)",
-                      transition: `opacity 0.22s ease ${i * 40}ms, transform 0.22s ease ${i * 40}ms`,
-                    }}
+                    onClick={handleClearRecent}
+                    disabled={clearingRecent}
+                    className="text-[11px] text-zinc-500 hover:text-zinc-300 disabled:text-zinc-700 bg-transparent border-none cursor-pointer disabled:cursor-default transition-colors"
                   >
-                    <ClockIcon />
-                    {r}
+                    Clear
                   </button>
-                ))}
+                </div>
+                {visibleRecent.map((r, i) => {
+                  const rowDelay = clearingRecent ? (visibleRecent.length - i - 1) * RECENT_CLEAR_STAGGER_MS : i * 40;
+                  return (
+                    <button
+                      key={r}
+                      onClick={() => setQ(r)}
+                      className="flex items-center gap-2.5 w-full px-1 bg-transparent border-none cursor-pointer text-zinc-300 hover:text-white text-sm text-left transition-colors overflow-hidden"
+                      style={{
+                        maxHeight: clearingRecent ? 0 : 40,
+                        opacity: show && !clearingRecent ? 1 : 0,
+                        paddingTop: clearingRecent ? 0 : 8,
+                        paddingBottom: clearingRecent ? 0 : 8,
+                        pointerEvents: clearingRecent ? "none" : "auto",
+                        transform: show && !clearingRecent ? "translateY(0)" : "translateY(-6px)",
+                        transition: `max-height ${RECENT_CLEAR_ROW_MS}ms ease ${rowDelay}ms, padding ${RECENT_CLEAR_ROW_MS}ms ease ${rowDelay}ms, opacity ${RECENT_CLEAR_ROW_MS}ms ease ${rowDelay}ms, transform ${RECENT_CLEAR_ROW_MS}ms ease ${rowDelay}ms`,
+                      }}
+                    >
+                      <ClockIcon />
+                      {r}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
