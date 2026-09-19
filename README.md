@@ -17,6 +17,16 @@ provides the browsing and playback experience, while the Express backend keeps
 the TMDB API key private, validates requests, normalizes TMDB responses, and
 resolves stream URLs.
 
+## Preview
+
+### Home page
+
+![Streaming App home page](readme_images/home.png)
+
+### Details page
+
+![Streaming App details page](readme_images/details.png)
+
 ## Features
 
 - Movie and TV discovery powered by TMDB
@@ -61,6 +71,7 @@ streaming-app/
 │       ├── components/    # Layout, cards, rows, and UI controls
 │       ├── hooks/         # Data fetching and UI behavior
 │       └── pages/         # Home, title, actor, and player pages
+├── readme_images/         # Screenshots used in this README
 ├── LICENSE
 └── README.md
 ```
