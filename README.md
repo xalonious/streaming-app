@@ -21,11 +21,11 @@ resolves stream URLs.
 
 ### Home page
 
-![Streaming App home page](readme_images/home.png)
+![Streaming App home page](preview/home.png)
 
 ### Details page
 
-![Streaming App details page](readme_images/details.png)
+![Streaming App details page](preview/details.png)
 
 ## Features
 

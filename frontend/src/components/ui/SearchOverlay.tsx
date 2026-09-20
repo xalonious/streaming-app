@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { type SearchResult } from "../../api/tmdb";
@@ -28,6 +28,10 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   const prevResultsRef = useRef<SearchResult[]>([]);
   const bodyRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+  const previousBodyHeightRef = useRef(0);
+  const bodyAnimationFrameRef = useRef<number | null>(null);
+  const bodyAnimationTimerRef = useRef<number | null>(null);
+  const resultRefs = useRef(new Map<string, HTMLDivElement>());
   const clearRecentTimerRef = useRef<number | null>(null);
 
   const dq = useDebounce(q, 350);
@@ -46,16 +50,48 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
     }
   }, [results]);
 
-  useEffect(() => {
-    if (!q && visibleRecent.length === 0) {
-      setBodyHeight(0);
-      return;
-    }
-    requestAnimationFrame(() => {
-      const el = innerRef.current;
-      if (el) setBodyHeight(el.scrollHeight);
+  useLayoutEffect(() => {
+    const inner = innerRef.current;
+    if (!inner) return;
+
+    if (bodyAnimationFrameRef.current !== null) cancelAnimationFrame(bodyAnimationFrameRef.current);
+    if (bodyAnimationTimerRef.current !== null) window.clearTimeout(bodyAnimationTimerRef.current);
+
+    const nextHeight = inner.scrollHeight;
+    setBodyHeight(previousBodyHeightRef.current);
+    previousBodyHeightRef.current = nextHeight;
+
+    bodyAnimationFrameRef.current = requestAnimationFrame(() => {
+      setBodyHeight(nextHeight);
+      bodyAnimationFrameRef.current = null;
     });
+    bodyAnimationTimerRef.current = window.setTimeout(() => {
+      setBodyHeight(null);
+      bodyAnimationTimerRef.current = null;
+    }, 420);
+
+    return () => {
+      if (bodyAnimationFrameRef.current !== null) cancelAnimationFrame(bodyAnimationFrameRef.current);
+      if (bodyAnimationTimerRef.current !== null) window.clearTimeout(bodyAnimationTimerRef.current);
+    };
   }, [results, q, visibleRecent, clearingRecent]);
+
+  useEffect(() => {
+    const keepBottomVisible = () => {
+      if (!expandedId) return;
+      const body = bodyRef.current;
+      const row = resultRefs.current.get(expandedId);
+      if (!body || !row) return;
+
+      const overflow = row.getBoundingClientRect().bottom - body.getBoundingClientRect().bottom + 8;
+      if (overflow > 0) body.scrollBy({ top: overflow, behavior: "smooth" });
+    };
+
+    const visibilityTimer = window.setTimeout(keepBottomVisible, 320);
+    return () => {
+      window.clearTimeout(visibilityTimer);
+    };
+  }, [expandedId]);
 
   useEffect(() => {
     return () => {
@@ -129,6 +165,15 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
       setClearingRecentSnapshot(null);
       clearRecentTimerRef.current = null;
     }, totalDuration);
+  }
+
+  function toggleExpandedResult(key: string, isExpanded: boolean) {
+    if (bodyAnimationFrameRef.current !== null) cancelAnimationFrame(bodyAnimationFrameRef.current);
+    if (bodyAnimationTimerRef.current !== null) window.clearTimeout(bodyAnimationTimerRef.current);
+    bodyAnimationFrameRef.current = null;
+    bodyAnimationTimerRef.current = null;
+    setBodyHeight(null);
+    setExpandedId(isExpanded ? null : key);
   }
 
   const filterLabel = filterType === "multi" ? "Movies & TV Shows" : filterType === "movie" ? "Movies" : "TV Shows";
@@ -223,7 +268,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
               )}
             </div>
           </div>
-          <div ref={bodyRef} style={{ height: bodyHeight !== null ? bodyHeight : "auto", maxHeight: "58vh", overflowY: "auto", transition: "height 400ms cubic-bezier(0.4, 0, 0.2, 1)", scrollbarWidth: "thin", scrollbarColor: "#2a2a2a transparent" }}>
+          <div ref={bodyRef} style={{ height: bodyHeight ?? "auto", maxHeight: "58vh", overflowY: "auto", transition: "height 400ms cubic-bezier(0.4, 0, 0.2, 1)", scrollbarWidth: "thin", scrollbarColor: "#2a2a2a transparent" }}>
           <div ref={innerRef}>
             {!q && visibleRecent.length > 0 && (
               <div
@@ -290,11 +335,15 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                 return (
                   <div
                     key={key}
+                    ref={el => {
+                      if (el) resultRefs.current.set(key, el);
+                      else resultRefs.current.delete(key);
+                    }}
                     className={`border-t border-white/[0.05] transition-colors ${isExpanded ? "bg-white/[0.04]" : ""}`}
                     style={{ animation: "slideInRow 0.22s ease both", animationDelay: `${i * 35}ms` }}
-                  >
+                    >
                     <button
-                      onClick={() => setExpandedId(isExpanded ? null : key)}
+                      onClick={() => toggleExpandedResult(key, isExpanded)}
                       className="flex items-center gap-3.5 w-full px-5 py-3 bg-transparent border-none cursor-pointer text-left hover:bg-white/[0.03] transition-colors"
                     >
                       <img
