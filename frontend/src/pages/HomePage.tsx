@@ -7,18 +7,32 @@ import { HeroSection } from "../components/layout/HeroSection";
 import { PosterCarousel } from "../components/rows/PosterCarousel";
 import { MediaTypeToggle } from "../components/ui/MediaTypeToggle";
 import { GenreRow } from "../components/rows/GenreRow";
+import { IntroLoader } from "../components/ui/IntroLoader";
+
+type TrendWindow = "day" | "week";
+type RatedType = "movie" | "tv";
+
+const homeCache = {
+  main: null as SearchResult[] | null,
+  trending: new Map<TrendWindow, SearchResult[]>(),
+  topRated: new Map<RatedType, SearchResult[]>(),
+};
 
 export default function HomePage() {
   const nav = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const [mainItems, setMainItems] = useState<SearchResult[]>([]);
-  const [mainLoading, setMainLoading] = useState(true);
+  const [mainItems, setMainItems] = useState<SearchResult[]>(() => homeCache.main ?? []);
+  const [mainLoading, setMainLoading] = useState(() => homeCache.main === null);
 
-  const [trendingItems, setTrendingItems] = useState<SearchResult[]>([]);
-  const [trendWindow, setTrendWindow] = useState<"day" | "week">("day");
-  const [topRatedItems, setTopRatedItems] = useState<SearchResult[]>([]);
-  const [topRatedType, setTopRatedType] = useState<"movie" | "tv">("movie");
+  const [trendingItems, setTrendingItems] = useState<SearchResult[]>(
+    () => homeCache.trending.get("day") ?? [],
+  );
+  const [trendWindow, setTrendWindow] = useState<TrendWindow>("day");
+  const [topRatedItems, setTopRatedItems] = useState<SearchResult[]>(
+    () => homeCache.topRated.get("movie") ?? [],
+  );
+  const [topRatedType, setTopRatedType] = useState<RatedType>("movie");
 
   useEffect(() => { document.title = "Streaming"; }, []);
 
@@ -36,8 +50,14 @@ export default function HomePage() {
   useEffect(() => {
     let cancelled = false;
     trendingTmdb("all", "day")
-      .then((data) => { if (!cancelled) setMainItems(data.results ?? []); })
-      .catch(() => { if (!cancelled) setMainItems([]); })
+      .then((data) => {
+        const items = data.results ?? [];
+        homeCache.main = items;
+        if (!cancelled) setMainItems(items);
+      })
+      .catch(() => {
+        if (!cancelled && homeCache.main === null) setMainItems([]);
+      })
       .finally(() => { if (!cancelled) setMainLoading(false); });
     return () => { cancelled = true; };
   }, []);
@@ -45,7 +65,11 @@ export default function HomePage() {
   useEffect(() => {
     let cancelled = false;
     topRatedTmdb(topRatedType)
-      .then(d => { if (!cancelled) setTopRatedItems(d.results ?? []); })
+      .then(d => {
+        const items = d.results ?? [];
+        homeCache.topRated.set(topRatedType, items);
+        if (!cancelled) setTopRatedItems(items);
+      })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [topRatedType]);
@@ -54,7 +78,11 @@ export default function HomePage() {
     let cancelled = false;
     const type = trendWindow === "day" ? "movie" : "tv";
     trendingTmdb(type, "day")
-      .then((data) => { if (!cancelled) setTrendingItems(data.results ?? []); })
+      .then((data) => {
+        const items = data.results ?? [];
+        homeCache.trending.set(trendWindow, items);
+        if (!cancelled) setTrendingItems(items);
+      })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [trendWindow]);
@@ -62,7 +90,8 @@ export default function HomePage() {
   const openTitle = (item: SearchResult) => nav(`/title/${item.type}/${item.id}`);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
+    <div className="home-page min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
+      <IntroLoader loading={mainLoading} />
       <Navbar onSearchOpen={() => setSearchOpen(true)} />
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       {mainLoading ? (

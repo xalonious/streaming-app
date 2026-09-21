@@ -1,14 +1,10 @@
-import { PlayIcon, SearchIcon } from "../ui/Icons";
+import { SearchIcon } from "../ui/Icons";
+import { Brand } from "./Brand";
 
 export function Navbar({ onSearchOpen }: { onSearchOpen: () => void }) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-10 py-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
-      <div className="flex items-center gap-2 pointer-events-auto">
-        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#e50914]">
-          <PlayIcon size={14} />
-        </div>
-        <span className="text-white font-bold text-lg tracking-tight">Streaming</span>
-      </div>
+      <Brand className="pointer-events-auto" />
       <button
         onClick={onSearchOpen}
         className="pointer-events-auto w-9 h-9 flex items-center justify-center text-zinc-400 hover:text-white transition-colors duration-200"
