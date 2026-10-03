@@ -52,12 +52,13 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
 
   useLayoutEffect(() => {
     const inner = innerRef.current;
-    if (!inner) return;
+    const body = bodyRef.current;
+    if (!inner || !body || (clearingRecent && !q)) return;
 
     if (bodyAnimationFrameRef.current !== null) cancelAnimationFrame(bodyAnimationFrameRef.current);
     if (bodyAnimationTimerRef.current !== null) window.clearTimeout(bodyAnimationTimerRef.current);
 
-    const nextHeight = inner.scrollHeight;
+    const nextHeight = Math.min(inner.scrollHeight, window.innerHeight * 0.58);
     setBodyHeight(previousBodyHeightRef.current);
     previousBodyHeightRef.current = nextHeight;
 
@@ -74,7 +75,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
       if (bodyAnimationFrameRef.current !== null) cancelAnimationFrame(bodyAnimationFrameRef.current);
       if (bodyAnimationTimerRef.current !== null) window.clearTimeout(bodyAnimationTimerRef.current);
     };
-  }, [results, q, visibleRecent, clearingRecent]);
+  }, [results, q, visibleRecent, clearingRecent, mounted]);
 
   useEffect(() => {
     const keepBottomVisible = () => {
@@ -156,7 +157,14 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
     if (clearRecentTimerRef.current !== null) {
       window.clearTimeout(clearRecentTimerRef.current);
     }
-
+    
+    if (bodyAnimationFrameRef.current !== null) cancelAnimationFrame(bodyAnimationFrameRef.current);
+    if (bodyAnimationTimerRef.current !== null) window.clearTimeout(bodyAnimationTimerRef.current);
+    bodyAnimationFrameRef.current = null;
+    bodyAnimationTimerRef.current = null;
+    const currentHeight = bodyRef.current?.getBoundingClientRect().height ?? 0;
+    previousBodyHeightRef.current = currentHeight;
+    setBodyHeight(currentHeight);
     setClearingRecentSnapshot(visibleRecent);
     clear();
 
@@ -272,22 +280,18 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
           <div ref={innerRef}>
             {!q && visibleRecent.length > 0 && (
               <div
-                className="px-5 border-t overflow-hidden"
+                className="px-5 py-3 border-t overflow-hidden"
                 style={{
                   borderColor: clearingRecent ? "rgba(255,255,255,0)" : "rgba(255,255,255,0.06)",
-                  paddingTop: clearingRecent ? 0 : 12,
-                  paddingBottom: clearingRecent ? 0 : 12,
-                  transition: `padding ${RECENT_CLEAR_ROW_MS}ms ease, border-color ${RECENT_CLEAR_ROW_MS}ms ease`,
+                  transition: `border-color ${RECENT_CLEAR_ROW_MS}ms ease`,
                 }}
               >
                 <div
-                  className="flex items-center justify-between"
+                  className="flex items-center justify-between mb-2.5"
                   style={{
-                    maxHeight: clearingRecent ? 0 : 20,
-                    marginBottom: clearingRecent ? 0 : 10,
                     opacity: clearingRecent ? 0 : 1,
-                    transform: clearingRecent ? "translateY(-4px)" : "translateY(0)",
-                    transition: `max-height ${RECENT_CLEAR_ROW_MS}ms ease, margin-bottom ${RECENT_CLEAR_ROW_MS}ms ease, opacity ${RECENT_CLEAR_ROW_MS}ms ease, transform ${RECENT_CLEAR_ROW_MS}ms ease`,
+                    transform: clearingRecent ? "translateX(-12px)" : "translateX(0)",
+                    transition: `opacity ${RECENT_CLEAR_ROW_MS}ms ease, transform ${RECENT_CLEAR_ROW_MS}ms ease`,
                   }}
                 >
                   <span className="text-[11px] text-zinc-500 uppercase tracking-widest">Recent</span>
@@ -305,15 +309,12 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                     <button
                       key={r}
                       onClick={() => setQ(r)}
-                      className="flex items-center gap-2.5 w-full px-1 bg-transparent border-none cursor-pointer text-zinc-300 hover:text-white text-sm text-left transition-colors overflow-hidden"
+                      className="flex items-center gap-2.5 w-full px-1 py-2 bg-transparent border-none cursor-pointer text-zinc-300 hover:text-white text-sm text-left transition-colors overflow-hidden"
                       style={{
-                        maxHeight: clearingRecent ? 0 : 40,
                         opacity: show && !clearingRecent ? 1 : 0,
-                        paddingTop: clearingRecent ? 0 : 8,
-                        paddingBottom: clearingRecent ? 0 : 8,
                         pointerEvents: clearingRecent ? "none" : "auto",
-                        transform: show && !clearingRecent ? "translateY(0)" : "translateY(-6px)",
-                        transition: `max-height ${RECENT_CLEAR_ROW_MS}ms ease ${rowDelay}ms, padding ${RECENT_CLEAR_ROW_MS}ms ease ${rowDelay}ms, opacity ${RECENT_CLEAR_ROW_MS}ms ease ${rowDelay}ms, transform ${RECENT_CLEAR_ROW_MS}ms ease ${rowDelay}ms`,
+                        transform: clearingRecent ? "translateX(-24px)" : show ? "translateY(0)" : "translateY(-6px)",
+                        transition: `opacity ${RECENT_CLEAR_ROW_MS}ms ease ${rowDelay}ms, transform ${RECENT_CLEAR_ROW_MS}ms cubic-bezier(0.4, 0, 0.2, 1) ${rowDelay}ms`,
                       }}
                     >
                       <ClockIcon />
