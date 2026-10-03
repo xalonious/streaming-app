@@ -201,6 +201,9 @@ export async function getTvAllEpisodes(tmdbId: number) {
       totalSeasons: seasons.length,
     };
   } catch (err: any) {
+    if (err?.response?.status === 404) {
+      throw ServiceError.notFound(`Episodes not found: tv=${tmdbId}`);
+    }
     throw ServiceError.internalServerError(`TMDB all episodes failed: ${err.message}`);
   }
 }
@@ -211,6 +214,9 @@ export async function getRecommendations(tmdbId: number, type: "movie" | "tv") {
     const results = (data?.results ?? []).map(normalizeSearchResult);
     return { results };
   } catch (err: any) {
+    if (err?.response?.status === 404) {
+      throw ServiceError.notFound(`${type === "movie" ? "Movie" : "TV show"} not found: ${tmdbId}`);
+    }
     throw ServiceError.internalServerError(`TMDB recommendations failed: ${err.message}`);
   }
 }
@@ -332,6 +338,9 @@ export async function getPersonDetails(personId: number) {
       shows,
     };
   } catch (err: any) {
+    if (err?.response?.status === 404) {
+      throw ServiceError.notFound(`Person not found: ${personId}`);
+    }
     throw ServiceError.internalServerError(`TMDB person details failed: ${err.message}`);
   }
 }
