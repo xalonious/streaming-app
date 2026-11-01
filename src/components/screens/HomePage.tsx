@@ -1,0 +1,172 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { trendingTmdb, topRatedTmdb, type SearchResult } from "../../api/tmdb";
+import { Navbar } from "../layout/Navbar";
+import { SearchOverlay } from "../ui/SearchOverlay";
+import { HeroSection } from "../layout/HeroSection";
+import { PosterCarousel } from "../rows/PosterCarousel";
+import { MediaTypeToggle } from "../ui/MediaTypeToggle";
+import { GenreRow } from "../rows/GenreRow";
+import { IntroLoader } from "../ui/IntroLoader";
+
+type TrendWindow = "day" | "week";
+type RatedType = "movie" | "tv";
+
+const homeCache = {
+  main: null as SearchResult[] | null,
+  trending: new Map<TrendWindow, SearchResult[]>(),
+  topRated: new Map<RatedType, SearchResult[]>(),
+};
+
+export default function HomePage() {
+  const router = useRouter();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const [mainItems, setMainItems] = useState<SearchResult[]>(() => homeCache.main ?? []);
+  const [mainLoading, setMainLoading] = useState(() => homeCache.main === null);
+
+  const [trendingItems, setTrendingItems] = useState<SearchResult[]>(
+    () => homeCache.trending.get("day") ?? [],
+  );
+  const [trendWindow, setTrendWindow] = useState<TrendWindow>("day");
+  const [topRatedItems, setTopRatedItems] = useState<SearchResult[]>(
+    () => homeCache.topRated.get("movie") ?? [],
+  );
+  const [topRatedType, setTopRatedType] = useState<RatedType>("movie");
+
+  useEffect(() => { document.title = "Streaming"; }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    trendingTmdb("all", "day")
+      .then((data) => {
+        const items = data.results ?? [];
+        homeCache.main = items;
+        if (!cancelled) setMainItems(items);
+      })
+      .catch(() => {
+        if (!cancelled && homeCache.main === null) setMainItems([]);
+      })
+      .finally(() => { if (!cancelled) setMainLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    topRatedTmdb(topRatedType)
+      .then(d => {
+        const items = d.results ?? [];
+        homeCache.topRated.set(topRatedType, items);
+        if (!cancelled) setTopRatedItems(items);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [topRatedType]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const type = trendWindow === "day" ? "movie" : "tv";
+    trendingTmdb(type, "day")
+      .then((data) => {
+        const items = data.results ?? [];
+        homeCache.trending.set(trendWindow, items);
+        if (!cancelled) setTrendingItems(items);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [trendWindow]);
+
+  const openTitle = (item: SearchResult) => router.push(`/title/${item.type}/${item.id}`, { scroll: false });
+
+  return (
+    <div className="home-page min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
+      <IntroLoader loading={mainLoading} />
+      <Navbar onSearchOpen={() => setSearchOpen(true)} />
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      {mainLoading ? (
+        <div className="w-full bg-black animate-pulse" style={{ height: "91vh", minHeight: 500 }} />
+      ) : mainItems.length > 0 ? (
+        <HeroSection
+          items={mainItems}
+          onPlay={(item) => item.type === "movie"
+            ? router.push(`/play/movie/${item.id}`, { scroll: false })
+            : router.push(`/play/tv/${item.id}/1/1`, { scroll: false })}
+          onDetails={(item) => router.push(`/title/${item.type}/${item.id}`, { scroll: false })}
+        />
+      ) : null}
+
+      <div className="mx-auto max-w-[1400px]">
+        {mainLoading ? (
+          <div className="px-4 sm:px-6 py-8">
+            <div className="h-20 w-64 bg-white/5 rounded animate-pulse mb-6" />
+            <div className="flex gap-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex-shrink-0" style={{ width: 240 }}>
+                  <div className="aspect-[2/3] rounded-xl bg-white/[0.06] animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <PosterCarousel
+            title="TOP 10 Today"
+            items={mainItems.slice(0, 10)}
+            onOpen={openTitle}
+            badge
+            scrollAmount={500}
+            sectionClassName="px-4 sm:px-6 pt-4 pb-8"
+          />
+        )}
+
+        <PosterCarousel
+          title={<>Trending <span className="text-zinc-400 font-normal">Today</span></>}
+          items={trendingItems}
+          onOpen={openTitle}
+          resetKey={trendWindow}
+          cardVariant="backdrop"
+          scrollItems={4}
+          rightContent={
+            <MediaTypeToggle
+              value={trendWindow}
+              options={[{ label: "Movies", value: "day" }, { label: "Series", value: "week" }]}
+              onChange={(v) => setTrendWindow(v)}
+            />
+          }
+        />
+
+        <PosterCarousel
+          title="Top rated"
+          items={topRatedItems}
+          onOpen={openTitle}
+          resetKey={topRatedType}
+          cardVariant="backdrop"
+          scrollItems={4}
+          rightContent={
+            <MediaTypeToggle
+              value={topRatedType}
+              options={[{ label: "Movies", value: "movie" }, { label: "Series", value: "tv" }]}
+              onChange={(v) => setTopRatedType(v)}
+            />
+          }
+        />
+
+        <GenreRow onOpen={openTitle} />
+      </div>
+
+      <div className="h-16" />
+    </div>
+  );
+}
