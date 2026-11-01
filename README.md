@@ -122,7 +122,7 @@ variables for private credentials.
 | --- | --- | --- |
 | `TMDB_API_KEY` | Yes for metadata | Server-side TMDB API key |
 | `STREAM_SOURCE` | Yes for playback | Base URL of the host-provided streaming embed service |
-| `PORT` | No | Next.js listen port; defaults to 3000. Set in the process environment or pass `--port` |
+| `PORT` | No | Development listen port; defaults to 3000. Production `npm start` explicitly uses port 2222, overriding `PORT`; pass `--port` to select a different production port |
 
 Next.js loads `.env.local` automatically. Production can instead supply the
 variables through its service manager. Never commit secrets. `BACKEND_PORT` is
@@ -155,7 +155,7 @@ not download, proxy, store, or bundle video files.
 | --- | --- |
 | `npm run dev` | Start one Next.js development server |
 | `npm run build` | Create and type-check the production application |
-| `npm start` | Serve the production application, including its API |
+| `npm start` | Serve the production application, including its API, on port 2222 |
 | `npm run lint` | Run ESLint with zero warnings allowed |
 | `npm run typecheck` | Run TypeScript without emitting files |
 
@@ -210,7 +210,10 @@ npm run build
 npm start
 ```
 
-For a different port:
+Open [localhost:2222](http://localhost:2222). The production start script uses
+port `2222`; development continues to use port `3000`.
+
+For a different production port:
 
 ```bash
 npm start -- --port 1111
