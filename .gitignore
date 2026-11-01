@@ -22,3 +22,5 @@ data/
 *.tsv
 *.tsv.gz
 *.import.tmp
+*.provider-owner-key
+.test-build/

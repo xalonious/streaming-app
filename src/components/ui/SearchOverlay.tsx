@@ -7,6 +7,7 @@ import { useTmdbSearch } from "../../hooks/useTmdbSearch";
 import { SearchIcon, CloseIcon, PlayIcon, InfoIcon, StarIcon, ChevronDown, ClockIcon, CheckIcon } from "./Icons";
 import { useRecentQueries } from "../../hooks/useRecentQueries";
 import { preferredRating } from "../../lib/ratings";
+import { playerHref } from "../../lib/playerNavigation";
 
 const STORAGE_KEY = "xalonstream:recentQueries";
 const RECENT_CLEAR_ROW_MS = 220;
@@ -138,11 +139,8 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
 
   function handlePlay(item: SearchResult) {
     commit(q.trim());
-    if (item.type === "movie") {
-      router.push(`/play/movie/${item.id}`, { scroll: false });
-    } else {
-      router.push(`/play/tv/${item.id}/1/1`, { scroll: false });
-    }
+    const returnTo = window.location.pathname + window.location.search + window.location.hash;
+    router.push(playerHref(item.type, item.id, returnTo), { scroll: false });
     onClose();
   }
 

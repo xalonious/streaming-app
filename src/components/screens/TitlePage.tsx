@@ -14,6 +14,7 @@ import { useTitleDetails, type ErrorLike } from "../../hooks/useTitleDetails";
 import { useSeasonEpisodes } from "../../hooks/useSeasonEpisodes";
 import { useCrossSeasonEpisodeSearch } from "../../hooks/useCrossSeasonEpisodeSearch";
 import { useCollection } from "../../hooks/useCollection";
+import { playerHref } from "../../lib/playerNavigation";
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -166,7 +167,7 @@ export default function TitlePage() {
           <div className="flex flex-wrap items-center gap-3">
             {isMovie ? (
               <Link scroll={false} prefetch={false}
-                href={`/play/movie/${tmdbId}`}
+                href={playerHref("movie", tmdbId, `/title/movie/${tmdbId}`)}
                 className="flex items-center gap-2 bg-white text-black font-bold text-sm rounded-xl px-7 py-2.5 hover:bg-zinc-100 transition-all active:scale-95"
               >
                 <PlayIcon size={15} /> Play
@@ -219,7 +220,7 @@ export default function TitlePage() {
                   {episodes.map(ep => (
                     <Link scroll={false} prefetch={false}
                       key={`${ep.season}-${ep.id}`}
-                      href={`/play/tv/${tmdbId}/${ep.season}/${ep.episode}`}
+                      href={playerHref("tv", tmdbId, `/title/tv/${tmdbId}`, ep.season, ep.episode)}
                       className="group flex items-center gap-4 py-3 hover:bg-white/[0.03] rounded-xl px-2 -mx-2 transition-colors"
                     >
                       <div className="relative flex-shrink-0 w-36 sm:w-44 aspect-video rounded-xl overflow-hidden bg-black/40">

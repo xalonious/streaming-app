@@ -1,36 +1,8 @@
 import "server-only";
-import ServiceError from "./ServiceError";
-
-function parsePosInt(raw: unknown, field: string): number {
-  const n = Number(raw);
-  if (!Number.isFinite(n) || !Number.isInteger(n) || n <= 0) {
-    throw ServiceError.validationFailed(`${field} must be a positive integer`);
-  }
-  return n;
+import { resolveStream } from "./providers/service";
+export async function getMovieStreamUrl(tmdbId: unknown, providerId?: string) {
+  return resolveStream("movie", Number(tmdbId), undefined, undefined, providerId);
 }
-
-function buildUrl(path: string) {
-  const rawStreamSource = process.env.STREAM_SOURCE;
-  if (!rawStreamSource) throw new Error("STREAM_SOURCE environment variable is not set");
-  const streamSource = rawStreamSource.replace(/\/+$/, "");
-  const url = new URL(streamSource + path);
-  return url.toString();
-}
-
-export async function getMovieStreamUrl(tmdbIdRaw: unknown) {
-  const tmdbId = parsePosInt(tmdbIdRaw, "tmdbId");
-
-  return { url: buildUrl(`/embed/movie/${tmdbId}`) };
-}
-
-export async function getTvStreamUrl(
-  tmdbIdRaw: unknown,
-  seasonRaw: unknown,
-  episodeRaw: unknown,
-) {
-  const tmdbId = parsePosInt(tmdbIdRaw, "tmdbId");
-  const season = parsePosInt(seasonRaw, "season");
-  const episode = parsePosInt(episodeRaw, "episode");
-
-  return { url: buildUrl(`/embed/tv/${tmdbId}/${season}/${episode}`) };
+export async function getTvStreamUrl(tmdbId: unknown, season: unknown, episode: unknown, providerId?: string) {
+  return resolveStream("tv", Number(tmdbId), Number(season), Number(episode), providerId);
 }

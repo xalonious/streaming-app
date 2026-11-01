@@ -1,5 +1,6 @@
 import "server-only";
 import type Database from "better-sqlite3";
+import { seedProviders } from "../providers/seed";
 
 const migrations = [String.raw`
   CREATE TABLE api_cache (
@@ -28,6 +29,25 @@ const migrations = [String.raw`
   INSERT INTO import_metadata(id) VALUES(1);
   CREATE TABLE job_locks (name TEXT PRIMARY KEY, owner TEXT NOT NULL, expires_at INTEGER NOT NULL);
   CREATE TABLE cache_statistics (name TEXT PRIMARY KEY, value INTEGER NOT NULL);
+`, String.raw`
+  CREATE TABLE stream_providers (
+    id TEXT PRIMARY KEY, name TEXT NOT NULL CHECK(length(name) BETWEEN 1 AND 80),
+    base_url TEXT NOT NULL UNIQUE, movie_template TEXT, tv_template TEXT,
+    enabled INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0,1)),
+    is_default INTEGER NOT NULL DEFAULT 0 CHECK(is_default IN (0,1) AND (is_default = 0 OR enabled = 1)),
+    priority INTEGER NOT NULL DEFAULT 0 CHECK(priority >= 0),
+    discovery_method TEXT NOT NULL CHECK(discovery_method IN ('registry','metadata','inference','manual')),
+    movie_verified INTEGER NOT NULL DEFAULT 0 CHECK(movie_verified IN (0,1)),
+    tv_verified INTEGER NOT NULL DEFAULT 0 CHECK(tv_verified IN (0,1)),
+    created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
+    CHECK(movie_template IS NOT NULL OR tv_template IS NOT NULL)
+  );
+  CREATE UNIQUE INDEX stream_providers_default ON stream_providers(is_default) WHERE is_default = 1;
+  CREATE INDEX stream_providers_order ON stream_providers(enabled, priority, created_at);
+`, String.raw`
+  ALTER TABLE stream_providers DROP COLUMN discovery_method;
+  ALTER TABLE stream_providers DROP COLUMN movie_verified;
+  ALTER TABLE stream_providers DROP COLUMN tv_verified;
 `];
 
 export function migrate(db: Database.Database) {
@@ -36,6 +56,7 @@ export function migrate(db: Database.Database) {
     if (version > migrations.length) throw new Error("Database schema is newer than this application");
     for (let i = version; i < migrations.length; i++) {
       db.exec(migrations[i]);
+      if (i === 1) seedProviders(db, process.env.STREAM_SOURCE);
       db.pragma(`user_version = ${i + 1}`);
     }
   }).immediate();

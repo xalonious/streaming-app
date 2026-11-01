@@ -10,6 +10,8 @@ import { PosterCarousel } from "../rows/PosterCarousel";
 import { MediaTypeToggle } from "../ui/MediaTypeToggle";
 import { GenreRow } from "../rows/GenreRow";
 import { IntroLoader } from "../ui/IntroLoader";
+import { ProviderSettings } from "../ui/ProviderSettings";
+import { playerHref } from "../../lib/playerNavigation";
 
 type TrendWindow = "day" | "week";
 type RatedType = "movie" | "tv";
@@ -23,6 +25,7 @@ const homeCache = {
 export default function HomePage() {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [mainItems, setMainItems] = useState<SearchResult[]>(() => homeCache.main ?? []);
   const [mainLoading, setMainLoading] = useState(() => homeCache.main === null);
@@ -94,16 +97,15 @@ export default function HomePage() {
   return (
     <div className="home-page min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
       <IntroLoader loading={mainLoading} />
-      <Navbar onSearchOpen={() => setSearchOpen(true)} />
+      <Navbar onSearchOpen={() => setSearchOpen(true)} onSettingsOpen={() => setSettingsOpen(true)} />
+      {settingsOpen && <ProviderSettings onClose={() => setSettingsOpen(false)} />}
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       {mainLoading ? (
         <div className="w-full bg-black animate-pulse" style={{ height: "91vh", minHeight: 500 }} />
       ) : mainItems.length > 0 ? (
         <HeroSection
           items={mainItems}
-          onPlay={(item) => item.type === "movie"
-            ? router.push(`/play/movie/${item.id}`, { scroll: false })
-            : router.push(`/play/tv/${item.id}/1/1`, { scroll: false })}
+          onPlay={(item) => router.push(playerHref(item.type, item.id, window.location.pathname + window.location.search + window.location.hash), { scroll: false })}
           onDetails={(item) => router.push(`/title/${item.type}/${item.id}`, { scroll: false })}
         />
       ) : null}

@@ -9,8 +9,9 @@ deployments on home servers and low-power devices such as a Raspberry Pi.
 
 Streaming App uses [The Movie Database (TMDB)](https://www.themoviedb.org/) for
 search, artwork, cast information, trailers, episodes, collections, and
-recommendations. Playback is provider-agnostic: the backend creates embed URLs
-from the `STREAM_SOURCE` configured by the person hosting the application.
+recommendations. Playback uses configurable HTTPS embed templates stored in
+SQLite. Anyone with access to the private deployment manages sources from the settings cog beside search;
+viewers can switch enabled sources directly in the player.
 
 The project is one TypeScript application using Next.js App Router. The existing
 React components provide browsing and playback, while Node.js Route Handlers keep
@@ -43,8 +44,9 @@ stream URLs. One process serves the interface and API.
 - Responsive React and Tailwind CSS interface
 - Validated Node.js Route Handlers with structured error responses, security headers, and
   development request logging
-- Provider-neutral playback integration configured entirely through an
-  environment variable
+- Multiple persistent providers, ordering, media compatibility, and a shared default
+- Manual provider URL templates with optional movie/TV previews
+- In-player source switching with separate last-used movie and TV preferences
 
 ## Tech stack
 
@@ -83,7 +85,7 @@ streaming-app/
 - Node.js >=22.9 (Node.js 22.20 or a current LTS recommended)
 - npm
 - A [TMDB API key](https://www.themoviedb.org/settings/api)
-- A streaming source supporting the embed URL format below
+- Permission to access and embed the streaming sources you configure
 
 ## Setup
 
@@ -104,7 +106,6 @@ Set the values in `.env.local`:
 
 ```env
 TMDB_API_KEY=YOUR_TMDB_API_KEY
-STREAM_SOURCE=https://your-stream-provider.example
 ```
 
 Then start the application:
@@ -114,7 +115,7 @@ npm run dev
 ```
 
 Open [localhost:3000](http://localhost:3000). No separate backend or proxy is
-needed. Both configuration variables stay server-side; use no `NEXT_PUBLIC_*`
+needed. Credentials stay server-side; use no `NEXT_PUBLIC_*`
 variables for private credentials.
 
 ## Environment variables
@@ -122,7 +123,6 @@ variables for private credentials.
 | Variable | Required | Description |
 | --- | --- | --- |
 | `TMDB_API_KEY` | Yes for metadata | Server-side TMDB API key |
-| `STREAM_SOURCE` | Yes for playback | Base URL of the host-provided streaming embed service |
 | `DATABASE_PATH` | No | SQLite file path; default `./data/streaming.db`, relative to the process working directory |
 | `PORT` | No | Development listen port; defaults to 3000. Production `npm start` explicitly uses port 2222, overriding `PORT`; pass `--port` to select a different production port |
 
@@ -130,26 +130,132 @@ Next.js loads `.env.local` automatically. Production can instead supply the
 variables through its service manager. Never commit secrets. `BACKEND_PORT` is
 obsolete. Next.js sets `NODE_ENV` for development and production itself.
 
-## Streaming source integration
+## Streaming providers
 
-`STREAM_SOURCE` must be an absolute base URL. A trailing slash is optional and
-is removed automatically. The configured service is expected to support these
-embed paths:
+Fresh installations seed **VidSrc** (`https://vidsrc.mov`) as the enabled default:
 
 ```text
-/embed/movie/{tmdbId}
-/embed/tv/{tmdbId}/{season}/{episode}
+Movie: https://vidsrc.mov/embed/movie/{tmdbId}
+TV:    https://vidsrc.mov/embed/tv/{tmdbId}/{season}/{episode}
 ```
 
-For example, a movie with TMDB ID `550` resolves to:
+These retain the existing application's embed paths. A seeded or documented
+template is not a claim about live playback, title availability, or access rights.
+Providers must allow the intended embedding; users are responsible for using only
+sources they are authorized to access. The app never extracts, downloads, proxies,
+or transcodes video, or bypasses provider restrictions.
+
+### Open settings and add a source
+
+1. Start the application and click the **cog beside Search** on the homepage.
+2. Choose **Add provider**, enter its name and public HTTPS base URL (a bare domain
+   is also accepted).
+3. Copy the movie and/or TV URL format from your provider's documentation, replacing
+   its media ID with `{tmdbId}` and TV episode values with `{season}` and `{episode}`.
+   Leave unsupported media types blank. Live example URLs show validation errors.
+4. Optionally open **Preview The Dark Knight (2008)** (TMDB 155) or
+   **Preview Game of Thrones · S1 E1** (TMDB 1399) to try the
+   generated URL. No playback confirmation is required.
+5. Choose enabled/default settings, then **Save provider**.
+
+**Edit**, **Enable / Disable**, **Make default**, arrow ordering controls,
+and a two-step **Delete → Confirm delete** are available on each source. Changes
+take effect without a restart. Disabling/deleting the default transactionally
+promotes the first enabled source; no default exists when all sources are disabled
+or deleted. Deleting all providers is permitted and is not undone on restart.
+
+### Manual templates and watching
+
+Supported placeholders are `{tmdbId}`, `{season}`, and `{episode}` in URL paths or
+query values. Movie templates require `{tmdbId}`; TV templates require all three.
+IMDb IDs are used only by ratings and are never streaming identifiers.
 
 ```text
-https://your-stream-provider.example/embed/movie/550
+https://example.com/watch/{tmdbId}
+https://example.com/player?id={tmdbId}&s={season}&e={episode}
 ```
 
-The generated URL is loaded inside an iframe. The provider must therefore
-permit framing from the domain where the frontend is hosted. Streaming App does
-not download, proxy, store, or bundle video files.
+Templates must be absolute HTTPS URLs on port 443 with the same origin as their
+base URL. Credentials, fragments, HTML, unsafe schemes, IP-literal hosts, and
+unsupported placeholders are rejected. Only positive integer TMDB/season/episode
+values are substituted and encoded, and the final URL is checked again. A base
+URL may include a path prefix. At most 50 sources can be configured.
+
+On a movie or episode player page, click the small **cogwheel** in the upper-right
+corner to open the source picker. It only switches between configured sources;
+provider management is available exclusively from the homepage settings. The picker
+closes after selection, on Escape, or when clicking outside it.
+Selection prefers the browser's last chosen source for that media type, then a
+compatible default, then the first enabled compatible source in configured order.
+Movie and TV preferences have separate localStorage keys. Private browsing or
+unavailable localStorage does not prevent playback. Source changes preserve the
+page, TMDB ID, season and episode but may restart playback position.
+The player's Back button returns directly to the page that opened playback,
+regardless of source changes or iframe history. Direct player links return to
+the current title's details page.
+Disabled or incompatible sources are omitted. Lists refresh on window focus and visibility.
+Unchanged URLs keep their iframe; missing/deleted sources
+fall back safely, and no compatible sources produces a link back to the homepage.
+
+### Manual configuration and previews
+
+URL formats are entered manually. There is no format discovery endpoint, provider
+scanning, or automatic verification. Provider configuration and playback URL
+resolution make no outbound server requests to streaming providers. The optional
+preview loads the supplied URL directly in a browser iframe.
+
+The homepage providers dialog fades and slides into view; animations respect the
+system's reduced-motion preference. The player's compact source picker has no
+provider management controls.
+
+### Provider management
+
+Anyone who can access the site can list, add, edit, enable, disable, reorder,
+preview, and delete providers. Settings open directly with no login,
+admin token, or generated key file. Provider management is shared application
+state for this private deployment, not per-viewer configuration.
+
+Management browser requests must use the application's own origin.
+Reverse proxies should preserve the public `Host` and set the correct
+`X-Forwarded-Proto` for Next.js. Same-origin checks prevent unrelated websites
+from making changes through a visitor's browser; they do not restrict visitors
+who already have access to the deployment.
+
+Provider templates accept public HTTPS domain URLs on port 443, reject credentials,
+HTML and unsupported placeholders, and must share the configured base origin.
+Management requests are limited to 60 per minute per server process. Request JSON
+is capped at 16 KiB with a five-second read timeout.
+
+### Migration and troubleshooting
+
+Schema version 2 adds `stream_providers` to the existing SQLite file. It stores
+stable IDs, normalized unique base URLs, optional movie/TV templates, enabled/default
+flags, priority, and Unix-ms timestamps. A partial unique index permits only one
+default; default changes and
+reordering use IMMEDIATE transactions. Cache eviction and IMDb maintenance never
+delete provider settings, and provider operations do not touch metadata or ratings.
+Schema version 3 removes the old discovery and playback-confirmation columns while
+preserving provider IDs, URLs, enabled states, defaults, ordering, and timestamps.
+
+`STREAM_SOURCE` is read **only once**, while applying migration 2. A custom HTTPS
+source retains the old `/embed/movie/...` and `/embed/tv/...` paths as the enabled
+default alongside VidSrc. Existing VidSrc installations migrate directly. Subsequent
+restarts do not reseed, overwrite edits, or read that variable for playback. After
+the first successful upgrade, remove it from your deployment. Invalid/insecure
+legacy URLs cause the migration to roll back with a validation error rather than
+silently replacing the configuration; correct the legacy URL to its working public
+HTTPS equivalent before retrying. Preserve a backup of the database before upgrading.
+
+- **Blank or blocked preview:** the provider may prohibit framing, require browser
+  authentication, block the network, lack the title, or be unavailable. A preview
+  cannot bypass these restrictions. Edit the template or try another authorized source.
+- **Source missing from player:** enable it and provide a template for the current
+  media type. Reopen/focus the player to refresh its source list.
+- **Wrong default appears:** an explicit browser preference takes precedence. Select
+  the desired source in that media type's player or clear its `xalonstream:provider:movie`
+  / `xalonstream:provider:tv` localStorage entry.
+- **Rate limited:** wait a minute before retrying. Management limits are shared
+  across viewers in the single server process.
 
 ## Available scripts
 
@@ -185,6 +291,18 @@ All application endpoints are served below `/api`.
 | `GET` | `/api/tmdb/person/{personId}` | Get person details and selected credits |
 | `GET` | `/api/streams/movie/{tmdbId}` | Resolve a movie embed URL |
 | `GET` | `/api/streams/tv/{tmdbId}/{season}/{episode}` | Resolve a TV episode embed URL |
+| `GET` | `/api/providers` | List enabled sources for playback (public) |
+| `GET` | `/api/providers/management` | List all providers |
+| `POST` | `/api/providers` | Add a provider |
+| `PATCH` | `/api/providers` | Reorder with `{ "ids": ["..."] }` containing every provider |
+| `PATCH` | `/api/providers/{id}` | Update fields, including enabled/default flags |
+| `DELETE` | `/api/providers/{id}` | Delete a provider |
+
+Stream endpoints accept optional `?providerId=...` and return `{ url, providerId }`;
+missing/disabled/incompatible choices fall back using the shared default and order.
+Provider APIs use `{ "error": "..." }` for 400/403/404/409/429 responses and
+generic 500 responses without database details; 429 includes `Retry-After: 60`.
+All provider responses use `Cache-Control: no-store`.
 
 `type` accepts `movie` or `tv` unless an endpoint states otherwise. Search also
 accepts `multi`, trending accepts `all`, and the trending window accepts `day`
@@ -425,7 +543,7 @@ TMDB misses. SQLite serializes writers; very high write concurrency can hit the
 busy timeout. Serverless/Edge/static-only hosting is not supported for automatic
 refresh. No cache or scheduler environment toggles are needed.
 
-## Checks and measured behavior
+## Development checks
 
 Check the application and build it for production:
 
@@ -433,23 +551,7 @@ Check the application and build it for production:
 npm run lint
 npm run typecheck
 npm run build
-npm start
 ```
-
-Measured on this Windows development machine with Node.js 22.20, November 1, 2026:
-
-| Check | Observed result |
-| --- | --- |
-| Official dataset startup import | 1,727,597 ratings, 6,516 ms, 82,255,872 bytes sampled peak worker RSS (78.4 MiB) |
-| Compressed dataset streamed | 8,728,224 bytes; no dataset file retained |
-| Live movie 550 API, initially uncached / repeat | 372 ms / 12 ms (includes HTTP/service/enrichment overhead) |
-| Persisted-cache movie/TV API after server restart | 13.74 ms / 15.49 ms |
-
-These are observations, not Raspberry Pi benchmarks or controlled pre/post
-portfolio performance claims. A cold catalogue also makes background mapping
-calls, so its early aggregate hit rate is lower.
-Subsequent import durations are recorded in SQLite. Third-party provider uptime and actual
-video playback depend on the configured source.
 
 ## Production deployment
 
@@ -472,7 +574,7 @@ npm start -- --port 1111
 
 Keep the production build (`.next`), generated `runtime/`, `public`, `package.json`, the lockfile,
 `next.config.ts`, and installed dependencies together. Supply `TMDB_API_KEY`
-and `STREAM_SOURCE` at runtime. No Vercel account, static export, separate API
+at runtime; providers persist in SQLite. No Vercel account, static export, separate API
 process, or SPA fallback configuration is needed. A reverse proxy can forward
 all requests to this one Node.js server. Do not serve `.next` as a static site.
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { type SearchResult, getTitleImages } from "../../api/tmdb";
 import { StarIcon, PlayIcon, InfoIcon } from "../ui/Icons";
 import { useSlideshow } from "../../hooks/useSlideshow";
@@ -13,14 +13,14 @@ export function HeroSection({ items, onPlay, onDetails }: {
   const [logos, setLogos] = useState<Record<string, string | null>>({});
   const [seasonCounts, setSeasonCounts] = useState<Record<string, number | null>>({});
 
-  const top10 = items.slice(0, 10);
+  const top10 = useMemo(() => items.slice(0, 10), [items]);
   const { activeIdx, prevIdx, goTo } = useSlideshow(top10.length);
 
   function cacheKey(item: SearchResult) {
     return `${item.type}:${item.id}`;
   }
 
-  function prefetch(item: SearchResult) {
+  const prefetch = useCallback((item: SearchResult) => {
     const key = cacheKey(item);
     setLogos(prev => {
       if (key in prev) return prev;
@@ -29,9 +29,9 @@ export function HeroSection({ items, onPlay, onDetails }: {
         .catch(() => setLogos(p => ({ ...p, [key]: null })));
       return { ...prev, [key]: null };
     });
-  }
+  }, []);
 
-  function prefetchSeasonCount(item: SearchResult) {
+  const prefetchSeasonCount = useCallback((item: SearchResult) => {
     if (item.type !== "tv") return;
     const key = cacheKey(item);
     setSeasonCounts(prev => {
@@ -41,7 +41,7 @@ export function HeroSection({ items, onPlay, onDetails }: {
         .catch(() => setSeasonCounts(p => ({ ...p, [key]: null })));
       return { ...prev, [key]: null };
     });
-  }
+  }, []);
 
   useEffect(() => {
     if (!top10.length) return;
@@ -52,7 +52,7 @@ export function HeroSection({ items, onPlay, onDetails }: {
       prefetch(next);
       prefetchSeasonCount(next);
     }
-  }, [activeIdx, top10.length]);
+  }, [activeIdx, top10, prefetch, prefetchSeasonCount]);
 
   const active = top10[activeIdx];
   const prev = prevIdx !== null ? top10[prevIdx] : null;
