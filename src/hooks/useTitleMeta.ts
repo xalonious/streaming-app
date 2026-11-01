@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getTitleImages } from "../api/tmdb";
 import type { TmdbMovie, TmdbTv } from "./useTitleDetails";
+import { preferredRating } from "../lib/ratings";
 
 type CastPerson = {
   id: number;
@@ -23,8 +24,8 @@ export function useTitleMeta(data: any, isMovie: boolean, isTv: boolean, tmdbId:
   const runtime = isMovie ? (data as TmdbMovie | null)?.runtime : undefined;
   const numberOfSeasons = isTv ? (data as TmdbTv | null)?.number_of_seasons : undefined;
 
-  const rating = typeof data?.vote_average === "number" && data.vote_average > 0
-    ? data.vote_average.toFixed(1) : null;
+  const preferred = preferredRating(data ?? {});
+  const rating = preferred.value !== null && preferred.value > 0 ? preferred.value.toFixed(1) : null;
 
   const trailer = useMemo(() => pickBestTrailer(data?.videos?.results ?? []), [data]);
 

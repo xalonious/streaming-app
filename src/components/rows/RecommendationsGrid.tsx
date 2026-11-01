@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { type SearchResult } from "../../api/tmdb";
 import { StarIcon } from "../ui/Icons";
+import { preferredRating } from "../../lib/ratings";
 
 export function RecommendationsGrid({
   items,
@@ -39,8 +40,8 @@ export function RecommendationsGrid({
             <div className="mt-2.5 px-0.5">
               <div className="text-white text-sm font-semibold truncate">{item.title}</div>
               <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-zinc-400 flex-wrap">
-                {!!item.vote_average && item.vote_average >= 1 && (
-                  <span className="flex items-center gap-1"><StarIcon /><span className="text-zinc-300">{item.vote_average.toFixed(1)}</span></span>
+                {(preferredRating(item).value ?? 0) >= 1 && (
+                  <span className="flex items-center gap-1"><StarIcon /><span className="text-zinc-300">{preferredRating(item).value!.toFixed(1)}</span></span>
                 )}
                 {item.year && <><span className="text-zinc-600">·</span><span>{item.year}</span></>}
                 <span className="text-zinc-600">·</span>

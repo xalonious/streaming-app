@@ -2,8 +2,13 @@ import "server-only";
 import ServiceError from "./ServiceError";
 import { createTmdbClient } from "./tmdbClient";
 import { normalizeSearchResult, getKnownForScore } from "./tmdbTransforms";
+import { enrichRatings } from "./imdb/enrichment";
 const IMG_BASE = "https://image.tmdb.org/t/p/w500";
 const IMG_BASE_ORIGINAL = "https://image.tmdb.org/t/p/original";
+
+function normalizeResults(results: any[], type?: "movie" | "tv") {
+  return enrichRatings(results.filter(r => r.media_type !== "person"), type).map(normalizeSearchResult);
+}
 
 export async function search(
   query: string,
@@ -20,9 +25,7 @@ export async function search(
     const { data } = await createTmdbClient().get(endpoint, {
       params: { query, include_adult: false },
     });
-    const results = (data?.results ?? [])
-      .filter((r: any) => r.media_type !== "person")
-      .map(normalizeSearchResult);
+    const results = normalizeResults(data?.results ?? [], type === "multi" ? undefined : type);
     return { results };
   } catch (err: any) {
     throw ServiceError.internalServerError(`TMDB search failed: ${err.message}`);
@@ -37,9 +40,7 @@ export async function getTrending(
     const { data } = await createTmdbClient().get(`/trending/${type}/${window}`, {
       params: { include_adult: false },
     });
-    const results = (data?.results ?? [])
-      .filter((r: any) => r.media_type !== "person")
-      .map(normalizeSearchResult);
+    const results = normalizeResults(data?.results ?? [], type === "all" ? undefined : type);
     return { results };
   } catch (err: any) {
     throw ServiceError.internalServerError(`TMDB trending failed: ${err.message}`);
@@ -51,7 +52,7 @@ export async function getMovieDetails(tmdbId: number) {
     const { data } = await createTmdbClient().get(`/movie/${tmdbId}`, {
       params: { append_to_response: "credits,videos" },
     });
-    return data;
+    return enrichRatings([data], "movie", { path: `/movie/${tmdbId}`, params: { append_to_response: "credits,videos" } })[0];
   } catch (err: any) {
     if (err?.response?.status === 404) {
       throw ServiceError.notFound(`Movie not found: ${tmdbId}`);
@@ -63,9 +64,9 @@ export async function getMovieDetails(tmdbId: number) {
 export async function getTvDetails(tmdbId: number) {
   try {
     const { data } = await createTmdbClient().get(`/tv/${tmdbId}`, {
-      params: { append_to_response: "credits,videos" },
+      params: { append_to_response: "credits,videos,external_ids" },
     });
-    return data;
+    return enrichRatings([data], "tv", { path: `/tv/${tmdbId}`, params: { append_to_response: "credits,videos,external_ids" } })[0];
   } catch (err: any) {
     if (err?.response?.status === 404) {
       throw ServiceError.notFound(`TV show not found: ${tmdbId}`);
@@ -139,7 +140,7 @@ export async function getTvAllEpisodes(tmdbId: number) {
 export async function getRecommendations(tmdbId: number, type: "movie" | "tv") {
   try {
     const { data } = await createTmdbClient().get(`/${type}/${tmdbId}/recommendations`);
-    const results = (data?.results ?? []).map(normalizeSearchResult);
+    const results = normalizeResults(data?.results ?? [], type);
     return { results };
   } catch (err: any) {
     if (err?.response?.status === 404) {
@@ -152,7 +153,7 @@ export async function getRecommendations(tmdbId: number, type: "movie" | "tv") {
 export async function getCollection(collectionId: number) {
   try {
     const { data } = await createTmdbClient().get(`/collection/${collectionId}`);
-    const parts = (data?.parts ?? [])
+    const parts = enrichRatings(data?.parts ?? [], "movie")
       .map((part: any) => normalizeSearchResult({ ...part, media_type: "movie" }))
       .sort((a: any, b: any) => (a.year ?? "9999").localeCompare(b.year ?? "9999"));
 
@@ -193,7 +194,7 @@ export async function getImages(tmdbId: number, type: "movie" | "tv") {
 export async function getTopRated(type: "movie" | "tv") {
   try {
     const { data } = await createTmdbClient().get(`/${type}/top_rated`);
-    const results = (data?.results ?? []).map(normalizeSearchResult);
+    const results = normalizeResults(data?.results ?? [], type);
     return { results };
   } catch (err: any) {
     throw ServiceError.internalServerError(`TMDB top rated failed: ${err.message}`);
@@ -214,7 +215,7 @@ export async function discoverByGenre(type: "movie" | "tv", genreId: number) {
     const { data } = await createTmdbClient().get(`/discover/${type}`, {
       params: { with_genres: genreId, sort_by: "popularity.desc", include_adult: false },
     });
-    const results = (data?.results ?? []).map(normalizeSearchResult);
+    const results = normalizeResults(data?.results ?? [], type);
     return { results };
   } catch (err: any) {
     throw ServiceError.internalServerError(`TMDB discover failed: ${err.message}`);
@@ -227,7 +228,7 @@ export async function getPersonDetails(personId: number) {
       params: { append_to_response: "combined_credits" },
     });
 
-    const cast = (data?.combined_credits?.cast ?? []) as any[];
+    const cast = enrichRatings((data?.combined_credits?.cast ?? []) as any[]);
 
     const dedupe = (arr: any[]) =>
       arr.filter((c, i, a) => a.findIndex((x: any) => x.id === c.id && x.media_type === c.media_type) === i);

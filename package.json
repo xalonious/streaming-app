@@ -3,31 +3,37 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/build-tools.mjs && next dev",
+    "build": "node scripts/build-tools.mjs && next build",
     "start": "next start --port 2222",
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:tools": "node scripts/build-tools.mjs",
+    "imdb:import": "node scripts/run-tool.mjs imdb-worker --force"
   },
   "dependencies": {
+    "axios": "^1.13.2",
+    "better-sqlite3": "^13.0.3",
+    "joi": "^18.0.2",
     "next": "16.4.3",
+    "node-cron": "^4.6.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "axios": "^1.13.2",
-    "joi": "^18.0.2",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "4.1.18",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "tailwindcss": "4.1.18",
-    "typescript": "^5",
-    "@tailwindcss/postcss": "4.1.18"
+    "typescript": "^5"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22.9.0"
   }
 }

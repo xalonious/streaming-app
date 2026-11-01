@@ -5,7 +5,7 @@ import nextTs from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores([".next/**", "out/**", "build/**", "runtime/**", ".npm-cache/**", "next-env.d.ts"]),
   {
     files: ["src/components/**", "src/hooks/**", "src/lib/server/tmdb*.ts"],
     rules: {

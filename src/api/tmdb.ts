@@ -1,4 +1,5 @@
 import apiClient from "./axiosInstance";
+import type { MediaRating } from "../lib/ratings";
 
 export type MediaType = "movie" | "tv";
 
@@ -11,6 +12,8 @@ export interface SearchResult {
   backdrop: string | null;
   overview: string;
   vote_average: number | null;
+  vote_count?: number | null;
+  rating?: MediaRating;
   genres: string [];
 }
 

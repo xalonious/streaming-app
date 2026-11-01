@@ -6,6 +6,7 @@ import useDebounce from "../../hooks/useDebounce";
 import { useTmdbSearch } from "../../hooks/useTmdbSearch";
 import { SearchIcon, CloseIcon, PlayIcon, InfoIcon, StarIcon, ChevronDown, ClockIcon, CheckIcon } from "./Icons";
 import { useRecentQueries } from "../../hooks/useRecentQueries";
+import { preferredRating } from "../../lib/ratings";
 
 const STORAGE_KEY = "xalonstream:recentQueries";
 const RECENT_CLEAR_ROW_MS = 220;
@@ -332,7 +333,8 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
               {results.map((item, i) => {
                 const key = `${item.type}:${item.id}`;
                 const isExpanded = expandedId === key;
-                const hasRating = typeof item.vote_average === "number" && item.vote_average >= 1;
+                const rating = preferredRating(item);
+                const hasRating = rating.value !== null && rating.value >= 1;
                 return (
                   <div
                     key={key}
@@ -361,7 +363,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                             <><span className="text-zinc-600">|</span>
                             <span className="flex items-center gap-1">
                               <StarIcon />
-                              {item.vote_average!.toFixed(1)}
+                              {rating.value!.toFixed(1)}
                             </span></>
                           )}
                         </div>

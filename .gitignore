@@ -10,3 +10,15 @@ coverage/
 next-env.d.ts
 *.log
 .DS_Store
+.npm-cache/
+runtime/
+data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.tsv
+*.tsv.gz
+*.import.tmp

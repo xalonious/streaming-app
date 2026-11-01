@@ -3,6 +3,7 @@ import { type SearchResult, getTitleImages } from "../../api/tmdb";
 import { StarIcon, PlayIcon, InfoIcon } from "../ui/Icons";
 import { useSlideshow } from "../../hooks/useSlideshow";
 import { getTvDetails } from "../../api/details";
+import { preferredRating } from "../../lib/ratings";
 
 export function HeroSection({ items, onPlay, onDetails }: {
   items: SearchResult[];
@@ -51,8 +52,6 @@ export function HeroSection({ items, onPlay, onDetails }: {
       prefetch(next);
       prefetchSeasonCount(next);
     }
-    // Preserve the original selection-driven fetch/timer cadence.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIdx, top10.length]);
 
   const active = top10[activeIdx];
@@ -61,7 +60,8 @@ export function HeroSection({ items, onPlay, onDetails }: {
   if (!active) return null;
 
   const logoUrl = logos[cacheKey(active)] ?? null;
-  const hasRating = typeof active.vote_average === "number" && active.vote_average >= 1;
+  const rating = preferredRating(active);
+  const hasRating = rating.value !== null && rating.value >= 1;
   const numberOfSeasons = active.type === "tv" ? seasonCounts[cacheKey(active)] : null;
 
   return (
@@ -113,7 +113,7 @@ export function HeroSection({ items, onPlay, onDetails }: {
             {hasRating && (
               <span className="flex items-center gap-1">
                 <StarIcon />
-                <span className="text-yellow-400 font-semibold">{active.vote_average!.toFixed(1)}</span>
+                <span className="text-yellow-400 font-semibold">{rating.value!.toFixed(1)}</span>
               </span>
             )}
             {active.year && (

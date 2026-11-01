@@ -35,6 +35,8 @@ export function normalizeSearchResult(r: any) {
     backdrop: r.backdrop_path ? `${IMG_BASE_ORIGINAL}${r.backdrop_path}` : null,
     overview: r.overview ?? "",
     vote_average: typeof r.vote_average === "number" ? Math.round(r.vote_average * 10) / 10 : null,
+    vote_count: r.vote_count ?? null,
+    rating: r.rating,
     genres,
   };
 }

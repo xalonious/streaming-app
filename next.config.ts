@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
+  serverExternalPackages: ["better-sqlite3", "node-cron"],
+  outputFileTracingIncludes: {
+    "/*": ["./runtime/*.cjs", "./node_modules/better-sqlite3/build/Release/*.node"],
+  },
   async headers() {
     return [{ source: "/api/:path*", headers: [
       { key: "Content-Security-Policy", value: "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests" },
