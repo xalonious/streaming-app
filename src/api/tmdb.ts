@@ -76,8 +76,13 @@ export const getTitleImages = async (type: "movie" | "tv", tmdbId: number) => {
   return res.data;
 };
 
+export interface TopRatedResponse {
+  results: SearchResult[];
+  rankingSource: "imdb" | "tmdb";
+}
+
 export const topRatedTmdb = async (type: "movie" | "tv") => {
-  const res = await apiClient.get<{ results: SearchResult[] }>(`/tmdb/top-rated/${type}`);
+  const res = await apiClient.get<TopRatedResponse>(`/tmdb/top-rated/${type}`);
   return res.data;
 };
 

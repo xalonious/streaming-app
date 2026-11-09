@@ -267,6 +267,7 @@ HTTPS equivalent before retrying. Preserve a backup of the database before upgra
 | `npm run lint` | Run ESLint with zero warnings allowed |
 | `npm run typecheck` | Run TypeScript without emitting files |
 | `npm run imdb:import` | Manually refresh the official IMDb dataset using the safe worker importer |
+| `npm run imdb:rankings` | Prepare saved movie/series rankings from the existing IMDb dataset |
 | `npm run build:tools` | Rebuild generated Node.js maintenance/worker bundles |
 
 ## API overview
@@ -285,7 +286,7 @@ All application endpoints are served below `/api`.
 | `GET` | `/api/tmdb/{type}/{tmdbId}/recommendations` | Get related titles |
 | `GET` | `/api/tmdb/{type}/{tmdbId}/images` | Get preferred title logo artwork |
 | `GET` | `/api/tmdb/collection/{tmdbId}` | Get a movie collection |
-| `GET` | `/api/tmdb/top-rated/{type}` | Get top-rated movies or TV shows |
+| `GET` | `/api/tmdb/top-rated/{type}` | Get IMDb-ranked movies or TV shows, with TMDB fallback |
 | `GET` | `/api/tmdb/genres/{type}` | List movie or TV genres |
 | `GET` | `/api/tmdb/discover/{type}/{genreId}` | Discover titles by genre |
 | `GET` | `/api/tmdb/person/{personId}` | Get person details and selected credits |
@@ -336,7 +337,37 @@ missing ratings remain hidden. Ratings display only their numeric value, without
 source labels. Homepage hero,
 Top 10, trending, genre and top-rated cards, search, title details, actor-credit
 cards, collection cards and recommendation grids share this behavior. Discovery
-ordering and all navigation/player identifiers remain TMDB-based.
+ordering outside the Top rated row and all navigation/player identifiers remain TMDB-based.
+
+The homepage **Top rated on IMDb** row selects and orders titles from the active
+local IMDb ratings dataset, rather than reordering a TMDB top-rated page. Movies
+require at least 25,000 IMDb votes; series require 10,000. Candidates sort by IMDb
+rating descending, then vote count descending, then IMDb ID for stable ties. This
+is an application ranking, not a reproduction of IMDb's Top 250 chart formula.
+Up to 1,000 qualifying candidates are scanned to return 20 titles per media type.
+TMDB's external-ID find endpoint supplies movie/series classification, metadata,
+artwork and navigation IDs; episode matches and adult titles are excluded.
+Preparation runs in the background worker after the daily import. Lookups use
+the shared persistent metadata cache and at most six concurrent requests.
+Both complete lists are saved together in the separate `imdb_top_rated` table;
+homepage requests only read that saved JSON and never scan ratings or resolve
+IMDb IDs. Yesterday's lists remain available throughout preparation, across
+server restarts, and after failed refreshes. Metadata-cache eviction does not
+delete the prepared lists. A worker lease and an import-generation check prevent
+overlapping workers or a concurrent import from publishing inconsistent lists.
+
+Startup and the 15-minute maintenance check also prepare missing or outdated
+lists, even when the downloaded ratings are already fresh. Failed preparation
+uses the scheduler's normal retries. New lists become visible on the next page
+reload or Movies/Series toggle after preparation completes. To prepare the lists
+without downloading the dataset again, run `npm run imdb:rankings` after building
+the maintenance tools (`npm run build:tools`). Manual dataset imports also prepare
+both lists.
+
+Until the first lists are prepared, the row uses TMDB's top-rated list and
+displays **Top rated**. The endpoint's `rankingSource`
+field (`imdb` or `tmdb`) identifies which ranking was used; individual cards keep
+their existing preferred-rating behavior. No additional IMDb download is needed.
 
 ## SQLite storage and migrations
 
@@ -357,6 +388,7 @@ newer schema is rejected rather than downgraded. Version 1 creates:
 | `api_cache` | `cache_key` primary key; JSON, creation/expiry/stale/access timestamps, UTF-8 response byte count |
 | `imdb_ratings` | `imdb_id` primary key; average rating, vote count, update timestamp |
 | `imdb_mappings` | `(media_type, tmdb_id)` composite key; nullable IMDb ID, update and expiry timestamps |
+| `imdb_top_rated` | Saved movie/series card lists, source import timestamp, preparation timestamp |
 | `import_metadata` | One row; attempt/success/failure timestamps, status, duration, active row count, error, source URL/ETag/Last-Modified/bytes, sampled peak RSS |
 | `job_locks` | Named lock, unique owner token, lease expiry |
 | `cache_statistics` | Cumulative named counters, flushed in batches |

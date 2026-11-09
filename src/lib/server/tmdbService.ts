@@ -3,6 +3,7 @@ import ServiceError from "./ServiceError";
 import { createTmdbClient } from "./tmdbClient";
 import { normalizeSearchResult, getKnownForScore } from "./tmdbTransforms";
 import { enrichRatings } from "./imdb/enrichment";
+import { getImdbTopRated } from "./imdb/top-rated";
 const IMG_BASE = "https://image.tmdb.org/t/p/w500";
 const IMG_BASE_ORIGINAL = "https://image.tmdb.org/t/p/original";
 
@@ -193,9 +194,15 @@ export async function getImages(tmdbId: number, type: "movie" | "tv") {
 
 export async function getTopRated(type: "movie" | "tv") {
   try {
+    const results = getImdbTopRated(type);
+    if (results.length) return { results, rankingSource: "imdb" as const };
+  } catch {
+    console.warn("Saved IMDb top-rated list could not be read; using TMDB top-rated fallback");
+  }
+  try {
     const { data } = await createTmdbClient().get(`/${type}/top_rated`);
     const results = normalizeResults(data?.results ?? [], type);
-    return { results };
+    return { results, rankingSource: "tmdb" as const };
   } catch (err: any) {
     throw ServiceError.internalServerError(`TMDB top rated failed: ${err.message}`);
   }

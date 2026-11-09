@@ -6,7 +6,7 @@ export function ttlFor(path: string) {
   if (path.startsWith("/search/")) return t.search;
   if (path.startsWith("/person/")) return t.people;
   if (path.startsWith("/genre/") || path.startsWith("/configuration")) return t.genres;
-  if (/\/external_ids$/.test(path)) return t.mappings;
+  if (/\/external_ids$/.test(path) || path.startsWith("/find/")) return t.mappings;
   if (/\/(recommendations|similar)$/.test(path)) return t.recommendations;
   if (/\/top_rated$/.test(path)) return t.topRated;
   if (/\/(now_playing|on_the_air|airing_today)$/.test(path)) return t.nowPlaying;

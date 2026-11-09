@@ -15,6 +15,7 @@ export function PosterCarousel({
   scrollItems,
   cardVariant = "poster",
   sectionClassName = "px-4 sm:px-6 py-6",
+  loading = false,
 }: {
   title: ReactNode;
   items: SearchResult[];
@@ -27,6 +28,7 @@ export function PosterCarousel({
   scrollItems?: number;
   cardVariant?: MediaCardVariant;
   sectionClassName?: string;
+  loading?: boolean;
 }) {
   const preloadPageSize = cardVariant === "backdrop" ? scrollItems ?? 4 : 0;
   const initialEagerImageCount = preloadPageSize * 2;
@@ -36,7 +38,7 @@ export function PosterCarousel({
     setEagerImageCount(initialEagerImageCount);
   }, [initialEagerImageCount, resetKey, items.length]);
 
-  if (!items.length) return null;
+  if (!items.length && !loading) return null;
 
   const preloadMoreImages = () => {
     if (!preloadPageSize) return;
@@ -44,7 +46,7 @@ export function PosterCarousel({
   };
 
   return (
-    <section className={sectionClassName}>
+    <section className={sectionClassName} aria-busy={loading}>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <div className="w-1 h-5 rounded-full bg-[#e50914]" />
@@ -53,23 +55,34 @@ export function PosterCarousel({
         {rightContent}
       </div>
       {children}
-      <CardRow
-        resetKey={resetKey}
-        scrollAmount={scrollAmount}
-        scrollItems={scrollItems}
-        onScrollIntent={preloadMoreImages}
-      >
-        {items.map((item, idx) => (
-          <MediaCard
-            key={item.id}
-            item={item}
-            onClick={() => onOpen(item)}
-            rank={badge ? idx + 1 : undefined}
-            variant={cardVariant}
-            imageLoading={idx < eagerImageCount ? "eager" : "lazy"}
-          />
-        ))}
-      </CardRow>
+      {loading && !items.length ? (
+        <div role="status" aria-label="Loading titles" className="flex gap-4 overflow-hidden animate-pulse">
+          {Array.from({ length: scrollItems ?? 4 }, (_, index) => (
+            <div key={index} aria-hidden="true" className={`flex-shrink-0 ${cardVariant === "backdrop" ? "w-[260px] sm:w-[320px]" : "w-[200px]"}`}>
+              <div className={`rounded-xl bg-white/5 ${cardVariant === "backdrop" ? "aspect-video" : "aspect-[2/3]"}`} />
+              <div className="mt-3 h-4 w-2/3 rounded bg-white/5" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <CardRow
+          resetKey={resetKey}
+          scrollAmount={scrollAmount}
+          scrollItems={scrollItems}
+          onScrollIntent={preloadMoreImages}
+        >
+          {items.map((item, idx) => (
+            <MediaCard
+              key={item.id}
+              item={item}
+              onClick={() => onOpen(item)}
+              rank={badge ? idx + 1 : undefined}
+              variant={cardVariant}
+              imageLoading={idx < eagerImageCount ? "eager" : "lazy"}
+            />
+          ))}
+        </CardRow>
+      )}
     </section>
   );
 }

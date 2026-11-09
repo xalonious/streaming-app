@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { trendingTmdb, topRatedTmdb, type SearchResult } from "../../api/tmdb";
+import { trendingTmdb, topRatedTmdb, type SearchResult, type TopRatedResponse } from "../../api/tmdb";
 import { Navbar } from "../layout/Navbar";
 import { SearchOverlay } from "../ui/SearchOverlay";
 import { HeroSection } from "../layout/HeroSection";
@@ -19,7 +19,7 @@ type RatedType = "movie" | "tv";
 const homeCache = {
   main: null as SearchResult[] | null,
   trending: new Map<TrendWindow, SearchResult[]>(),
-  topRated: new Map<RatedType, SearchResult[]>(),
+  topRated: new Map<RatedType, TopRatedResponse>(),
 };
 
 export default function HomePage() {
@@ -34,10 +34,11 @@ export default function HomePage() {
     () => homeCache.trending.get("day") ?? [],
   );
   const [trendWindow, setTrendWindow] = useState<TrendWindow>("day");
-  const [topRatedItems, setTopRatedItems] = useState<SearchResult[]>(
-    () => homeCache.topRated.get("movie") ?? [],
+  const [topRated, setTopRated] = useState<TopRatedResponse>(
+    () => homeCache.topRated.get("movie") ?? { results: [], rankingSource: "tmdb" },
   );
   const [topRatedType, setTopRatedType] = useState<RatedType>("movie");
+  const [topRatedLoading, setTopRatedLoading] = useState(() => !homeCache.topRated.has("movie"));
 
   useEffect(() => { document.title = "Streaming"; }, []);
 
@@ -69,13 +70,15 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
+    setTopRated(homeCache.topRated.get(topRatedType) ?? { results: [], rankingSource: "tmdb" });
+    setTopRatedLoading(true);
     topRatedTmdb(topRatedType)
       .then(d => {
-        const items = d.results ?? [];
-        homeCache.topRated.set(topRatedType, items);
-        if (!cancelled) setTopRatedItems(items);
+        homeCache.topRated.set(topRatedType, d);
+        if (!cancelled) setTopRated(d);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setTopRatedLoading(false); });
     return () => { cancelled = true; };
   }, [topRatedType]);
 
@@ -150,8 +153,9 @@ export default function HomePage() {
         />
 
         <PosterCarousel
-          title="Top rated"
-          items={topRatedItems}
+          title="Top Rated"
+          items={topRated.results}
+          loading={topRatedLoading}
           onOpen={openTitle}
           resetKey={topRatedType}
           cardVariant="backdrop"

@@ -48,6 +48,13 @@ const migrations = [String.raw`
   ALTER TABLE stream_providers DROP COLUMN discovery_method;
   ALTER TABLE stream_providers DROP COLUMN movie_verified;
   ALTER TABLE stream_providers DROP COLUMN tv_verified;
+`, String.raw`
+  CREATE TABLE imdb_top_rated (
+    media_type TEXT PRIMARY KEY CHECK(media_type IN ('movie','tv')),
+    results_json TEXT NOT NULL,
+    import_success INTEGER NOT NULL,
+    prepared_at INTEGER NOT NULL
+  );
 `];
 
 export function migrate(db: Database.Database) {
