@@ -3,9 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
-  serverExternalPackages: ["better-sqlite3", "node-cron"],
+  serverExternalPackages: ["node-cron"],
   outputFileTracingIncludes: {
-    "/*": ["./runtime/*.cjs", "./node_modules/better-sqlite3/build/Release/*.node"],
+    "/*": ["./runtime/*.cjs"],
   },
   async headers() {
     return [{ source: "/api/:path*", headers: [

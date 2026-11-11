@@ -1,5 +1,6 @@
 import "server-only";
-import type Database from "better-sqlite3";
+import { transaction } from "../db/transactions";
+import type { DatabaseSync } from "node:sqlite";
 import { getDatabase } from "../db/connection";
 import { CACHE_CONFIG } from "./config";
 import { cleanupCache } from "./cleanup";
@@ -14,10 +15,10 @@ export class PersistentCache {
   private counters = new Map<Counter, number>();
   private lastCleanup = 0;
   private lastFlush = 0;
-  constructor(readonly db: Database.Database, private now = Date.now) {}
+  constructor(readonly db: DatabaseSync, private now = Date.now) {}
   flushStats() {
     const insert = this.db.prepare("INSERT INTO cache_statistics(name,value) VALUES(?,?) ON CONFLICT(name) DO UPDATE SET value=value+excluded.value");
-    this.db.transaction(() => { for (const [key, value] of this.counters) insert.run(key, value); })();
+    transaction(this.db, () => { for (const [key, value] of this.counters) insert.run(key, value); });
     this.counters.clear(); this.lastFlush = this.now();
   }
   count(key: Counter) { this.counters.set(key, (this.counters.get(key) ?? 0) + 1); }

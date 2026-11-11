@@ -1,5 +1,6 @@
 import "server-only";
-import type Database from "better-sqlite3";
+import { transaction } from "../db/transactions";
+import type { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 import { getDatabase } from "../db/connection";
 import { createTmdbClient } from "../tmdbClient";
@@ -26,7 +27,7 @@ type Title = {
 type FindResults = { movie_results?: Title[]; tv_results?: Title[] };
 
 export async function rankImdbTitles(
-  db: Database.Database,
+  db: DatabaseSync,
   type: "movie" | "tv",
   find: (imdbId: string) => Promise<FindResults>,
   assertCurrent: () => void = () => {},
@@ -69,12 +70,12 @@ export function getImdbTopRated(type: "movie" | "tv", db = getDatabase()): Retur
   return row ? JSON.parse(row.results_json) : [];
 }
 
-function activeImport(db: Database.Database) {
+function activeImport(db: DatabaseSync) {
   const row = db.prepare("SELECT last_success FROM import_metadata WHERE id=1").get() as { last_success: number | null };
   return row.last_success;
 }
 
-export function needsTopRatedRefresh(db: Database.Database) {
+export function needsTopRatedRefresh(db: DatabaseSync) {
   const generation = activeImport(db);
   if (generation === null) return false;
   const saved = db.prepare("SELECT media_type FROM imdb_top_rated WHERE import_success=?").all(generation);
@@ -86,7 +87,7 @@ async function findTitle(imdbId: string): Promise<FindResults> {
   return data as FindResults;
 }
 
-export async function refreshImdbTopRated(db: Database.Database, find = findTitle) {
+export async function refreshImdbTopRated(db: DatabaseSync, find = findTitle) {
   const generation = activeImport(db);
   if (generation === null) return { status: "unavailable" as const };
   if (!needsTopRatedRefresh(db)) return { status: "fresh" as const };
@@ -113,14 +114,14 @@ export async function refreshImdbTopRated(db: Database.Database, find = findTitl
     const movie = await rankImdbTitles(db, "movie", find, assertCurrent);
     const tv = await rankImdbTitles(db, "tv", find, assertCurrent);
     if (!movie.length || !tv.length) throw new Error("IMDb top-rated refresh produced an empty list; previous lists retained");
-    db.transaction(() => {
+    transaction(db, () => {
       assertCurrent();
       const save = db.prepare(`INSERT INTO imdb_top_rated VALUES(?,?,?,?) ON CONFLICT(media_type) DO UPDATE SET
         results_json=excluded.results_json,import_success=excluded.import_success,prepared_at=excluded.prepared_at`);
       const prepared = Date.now();
       save.run("movie", JSON.stringify(movie), generation, prepared);
       save.run("tv", JSON.stringify(tv), generation, prepared);
-    }).immediate();
+    }, "IMMEDIATE");
     return { status: "success" as const, movies: movie.length, series: tv.length };
   } finally {
     clearInterval(heartbeat);

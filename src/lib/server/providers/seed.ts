@@ -1,9 +1,9 @@
 import "server-only";
-import type Database from "better-sqlite3";
+import type { DatabaseSync } from "node:sqlite";
 import { validateProvider } from "./validation";
 import { normalizeBaseUrl } from "../../providers/templates";
 
-export function seedProviders(db: Database.Database, legacySource?: string) {
+export function seedProviders(db: DatabaseSync, legacySource?: string) {
   const standard = {
     name: "VidSrc", baseUrl: "https://vidsrc.mov",
     movieTemplate: "https://vidsrc.mov/embed/movie/{tmdbId}",

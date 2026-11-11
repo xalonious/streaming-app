@@ -1,5 +1,5 @@
 import "server-only";
-import type Database from "better-sqlite3";
+import type { DatabaseSync } from "node:sqlite";
 import { getDatabase } from "../db/connection";
 import { CACHE_CONFIG } from "../cache/config";
 import { cacheKey } from "../cache/keys";
@@ -7,21 +7,21 @@ import { createTmdbClient } from "../tmdbClient";
 
 export type MediaIdentity = { id: number; type: "movie" | "tv" };
 export type Mapping = { media_type: "movie" | "tv"; tmdb_id: number; imdb_id: string | null; average_rating: number | null; vote_count: number | null };
-export function lookupRatings(db: Database.Database, titles: MediaIdentity[]) {
+export function lookupRatings(db: DatabaseSync, titles: MediaIdentity[]) {
   if (!titles.length) return [];
   return db.prepare(`SELECT m.media_type,m.tmdb_id,m.imdb_id,r.average_rating,r.vote_count
     FROM json_each(?) j JOIN imdb_mappings m ON m.media_type=json_extract(j.value,'$.type')
     AND m.tmdb_id=json_extract(j.value,'$.id') LEFT JOIN imdb_ratings r ON r.imdb_id=m.imdb_id
     WHERE m.expires_at>?`).all(JSON.stringify(titles), Date.now()) as Mapping[];
 }
-export function saveMapping(db: Database.Database, title: MediaIdentity, imdbId: unknown, expiresAt = Date.now() + CACHE_CONFIG.ttl.mappings) {
+export function saveMapping(db: DatabaseSync, title: MediaIdentity, imdbId: unknown, expiresAt = Date.now() + CACHE_CONFIG.ttl.mappings) {
   const id = typeof imdbId === "string" && /^tt\d{7,12}$/.test(imdbId) ? imdbId : null;
   db.prepare(`INSERT INTO imdb_mappings VALUES(?,?,?,?,?) ON CONFLICT(media_type,tmdb_id)
     DO UPDATE SET imdb_id=excluded.imdb_id,updated_at=excluded.updated_at,expires_at=excluded.expires_at
     WHERE imdb_mappings.imdb_id IS NOT excluded.imdb_id OR imdb_mappings.expires_at != excluded.expires_at`)
     .run(title.type, title.id, id, Date.now(), Math.min(expiresAt, Date.now() + CACHE_CONFIG.ttl.mappings));
 }
-export function mappingRetention(db: Database.Database, path: string, params = {}) {
+export function mappingRetention(db: DatabaseSync, path: string, params = {}) {
   const row = db.prepare("SELECT stale_until FROM api_cache WHERE cache_key=?").get(cacheKey(path, params)) as { stale_until: number } | undefined;
   return Math.min(row?.stale_until ?? Date.now(), Date.now() + CACHE_CONFIG.ttl.mappings);
 }

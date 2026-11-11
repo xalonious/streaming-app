@@ -55,7 +55,7 @@ stream URLs. One process serves the interface and API.
 | Interface | Next.js 16.4.3 App Router, React 19, TypeScript, Tailwind CSS 4.1.18, Axios |
 | Server | Next.js Node.js Route Handlers, Axios, Joi; equivalent API security headers |
 | Metadata | TMDB API with persistent SQLite caching; official IMDb ratings dataset |
-| Storage and scheduling | better-sqlite3 (WAL), node-cron, dedicated IMDb child process |
+| Storage and scheduling | Node.js built-in `node:sqlite` / `DatabaseSync` (WAL), node-cron, dedicated IMDb child process |
 | Playback | User-configured embed provider |
 
 ## Project structure
@@ -82,10 +82,14 @@ streaming-app/
 
 ## Prerequisites
 
-- Node.js >=22.9 (Node.js 22.20 or a current LTS recommended)
+- Node.js 22.16.0+ on the 22.x line, or Node.js >=24.0.0, with `node:sqlite` enabled
 - npm
 - A [TMDB API key](https://www.themoviedb.org/settings/api)
 - Permission to access and embed the streaming sources you configure
+
+SQLite ships with Node.js; Windows does not need Visual Studio C++ Build Tools
+or a separate SQLite installation. Next.js and esbuild still use their normal
+platform-specific binaries, installed by npm.
 
 ## Setup
 
@@ -266,6 +270,7 @@ HTTPS equivalent before retrying. Preserve a backup of the database before upgra
 | `npm start` | Serve the production application, including its API, on port 2222 |
 | `npm run lint` | Run ESLint with zero warnings allowed |
 | `npm run typecheck` | Run TypeScript without emitting files |
+| `npm run test:db` | Test legacy database copies, transactions, cache, IMDb imports/locks, and provider CRUD |
 | `npm run imdb:import` | Manually refresh the official IMDb dataset using the safe worker importer |
 | `npm run imdb:rankings` | Prepare saved movie/series rankings from the existing IMDb dataset |
 | `npm run build:tools` | Rebuild generated Node.js maintenance/worker bundles |
@@ -378,6 +383,28 @@ do not initialize the scheduler or import data. Database imports are marked
 One connection is reused per absolute path and process through `globalThis`,
 including development reloads. SQLite uses WAL, NORMAL synchronization, a
 5-second busy timeout, and a 4 MiB page cache per connection.
+
+Storage uses Node.js's built-in `DatabaseSync` directly. Node.js 22.16.0 is the
+minimum on the 22.x line for its connection timeout and transaction-state APIs.
+Node.js 23 is unsupported because it lacks the required transaction-state API. No experimental
+flag is needed. Node.js 22 emits an experimental SQLite warning. This is expected;
+the module's stability and bundled SQLite version depend on the Node.js release.
+Custom Node.js builds must include SQLite, and `--no-experimental-sqlite` must not
+be set on versions that support that flag. The database remains server-side in the
+Node.js runtime; Edge runtimes are unsupported.
+
+Upgrading from `better-sqlite3` keeps the same `DATABASE_PATH`, SQLite file,
+schema, and `PRAGMA user_version` migration history (currently version 4). There
+is no driver-specific data migration or reseeding. Stop the app and workers,
+make a consistent backup as described below, upgrade Node.js if necessary, then
+run `npm ci`, `npm run build`, and restart against the existing path. Do not
+delete the database or its WAL/SHM files during the upgrade.
+
+Prepared statements retain positional bindings. Transactions use explicit
+BEGIN/COMMIT/ROLLBACK, with savepoints for nested provider updates; write-locking
+operations retain IMMEDIATE mode. Transaction callbacks must stay synchronous.
+PRAGMAs execute as SQL, and cache eviction converts statement change counts to
+numbers. The IMDb worker uses the same built-in driver and lease protocol.
 
 Migrations in `src/lib/server/db/migrations.ts` run in an IMMEDIATE transaction
 and advance SQLite `PRAGMA user_version` only when committed. A database with a
@@ -548,12 +575,12 @@ matters; API cache entries are disposable.
 do not block the Next.js request-serving event loop. It runs automatically before
 `npm run dev` and `npm run build`; it does not download or import the dataset.
 Keep `runtime/` in production alongside dependencies;
-the worker needs Node.js and the platform's native `better-sqlite3` binding,
+the worker needs a supported Node.js version (22.16+ on 22.x, or 24+) with built-in SQLite,
 not TypeScript/esbuild at runtime. Maintenance npm scripts build missing bundles
 when development dependencies are available. Rebuild tools after source edits.
 
 The current deployment uses `next start`. If you opt into `output: 'standalone'`,
-runtime bundles and native bindings are included by explicit tracing rules.
+runtime bundles are included by explicit tracing rules; SQLite is supplied by Node.js.
 Copy `public/` and `.next/static/` as Next.js documents, verify `runtime/` is beside
 the standalone `server.js`, and launch from that directory. If your packaging
 tool omits these files, copy `runtime/` there explicitly. Use an absolute
@@ -561,9 +588,9 @@ tool omits these files, copy `runtime/` there explicitly. Use an absolute
 For standalone maintenance, run `node runtime/imdb-worker.cjs --force` with the
 deployment environment supplied.
 
-On Raspberry Pi, prefer a supported 64-bit OS and Node.js LTS. Install native
-dependencies on the target architecture; a compatible prebuilt binary or local
-C++ build tools are required for better-sqlite3. Use reliable storage (preferably
+On Raspberry Pi, prefer a supported 64-bit OS and Node.js LTS with built-in SQLite.
+Install dependencies on the target architecture for Next.js's platform binaries.
+SQLite requires no separate native addon or C++ build tools. Use reliable storage (preferably
 SSD), allow space for both old and staging datasets plus WAL, and leave build
 memory headroom. Imports stream in a separate process with a small SQLite page
 cache; actual Pi duration/memory must be measured on the device.
@@ -582,8 +609,17 @@ Check the application and build it for production:
 ```bash
 npm run lint
 npm run typecheck
+npm run test:db
 npm run build
 ```
+
+Database tests use temporary files under `.test-build/` and populated legacy
+schema fixtures at versions 1–4. They migrate copies, verify original files and
+existing rows remain intact, and exercise rollback, WAL readers, competing writers,
+lease ownership, importer failure recovery, saved rankings, cache and providers.
+They use local compressed IMDb fixtures and stub TMDB lookups; they do not download
+the full IMDb dataset or require an API key. To validate deployment-specific data,
+also start the upgraded app against a consistent backup copy of that database.
 
 ## Production deployment
 

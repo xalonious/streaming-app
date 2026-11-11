@@ -1,4 +1,5 @@
 import "server-only";
+import { transaction } from "../db/transactions";
 import { getDatabase } from "../db/connection";
 import { preferredRating, type RatedMedia } from "../../ratings";
 import { lookupRatings, queueMappings, saveMapping, mappingRetention, type MediaIdentity } from "./mappings";
@@ -9,13 +10,13 @@ export function enrichRatings<T extends Title>(titles: T[], fallbackType?: "movi
   const identities = titles.map(title => ({ id: title.id, type: fallbackType
     ?? (title.media_type === "movie" || title.media_type === "tv" ? title.media_type : undefined)
     ?? (title.type === "movie" || title.type === "tv" ? title.type : title.title ? "movie" : "tv") })) as MediaIdentity[];
-  db.transaction(() => {
+  transaction(db, () => {
     titles.forEach((title, index) => {
       const id = title.imdb_id !== undefined ? title.imdb_id : title.external_ids?.imdb_id;
       if (id !== undefined) saveMapping(db, identities[index], id,
         origin ? mappingRetention(db, origin.path, origin.params) : undefined);
     });
-  })();
+  });
   const rows = lookupRatings(db, identities);
   const found = new Map(rows.map(row => [`${row.media_type}:${row.tmdb_id}`, row]));
   const missing = identities.filter(title => !found.has(`${title.type}:${title.id}`));

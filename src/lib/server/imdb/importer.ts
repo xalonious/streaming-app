@@ -1,5 +1,6 @@
 import "server-only";
-import type Database from "better-sqlite3";
+import { transaction } from "../db/transactions";
+import type { DatabaseSync } from "node:sqlite";
 import { get } from "node:https";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -35,7 +36,7 @@ export function downloadDataset(signal: AbortSignal): Promise<DatasetSource> {
   });
 }
 
-export async function importRatings(db: Database.Database, options: {
+export async function importRatings(db: DatabaseSync, options: {
   source?: (signal: AbortSignal) => Promise<DatasetSource>;
   minimumRows?: number; force?: boolean; scheduled?: boolean;
 } = {}) {
@@ -61,7 +62,7 @@ export async function importRatings(db: Database.Database, options: {
     const fresh = options.scheduled ? (metadata.last_success ?? 0) >= dailySlot.getTime()
       : !!metadata.last_success && started - metadata.last_success < IMDB_CONFIG.maxAge;
     if (!options.force && active && fresh) return { status: "fresh" as const };
-    db.transaction(() => {
+    transaction(db, () => {
       assertOwner();
       db.prepare("UPDATE import_metadata SET last_attempt=?,status='running',last_error=NULL WHERE id=1").run(started);
       db.exec(`DROP TABLE IF EXISTS imdb_ratings_staging;
@@ -69,7 +70,7 @@ export async function importRatings(db: Database.Database, options: {
           imdb_id TEXT PRIMARY KEY, average_rating REAL NOT NULL CHECK(average_rating BETWEEN 0 AND 10),
           vote_count INTEGER NOT NULL CHECK(vote_count >= 0), updated_at INTEGER NOT NULL
         )`);
-    }).immediate();
+    }, "IMMEDIATE");
     const source = await (options.source ?? downloadDataset)(controller.signal);
     if (source.length && source.length > IMDB_CONFIG.maximumCompressedBytes) {
       source.stream.destroy(); throw new Error("IMDb dataset exceeds compressed size limit");
@@ -77,10 +78,10 @@ export async function importRatings(db: Database.Database, options: {
     let compressed = 0, expanded = 0, rows = 0, invalid = 0, header = false, pending = "";
     let batch: RatingRow[] = [];
     const insert = db.prepare("INSERT INTO imdb_ratings_staging VALUES(?,?,?,?)");
-    const commitBatch = db.transaction((records: RatingRow[]) => {
+    const commitBatch = (records: RatingRow[]) => transaction(db, () => {
       assertOwner();
       for (const row of records) insert.run(row.imdbId, row.averageRating, row.voteCount, started);
-    });
+    }, "IMMEDIATE");
     const line = (value: string) => {
       if (!header) {
         if (value.replace(/\r$/, "") !== "tconst\taverageRating\tnumVotes") throw new Error("Unexpected IMDb dataset header");
@@ -107,7 +108,7 @@ export async function importRatings(db: Database.Database, options: {
           if (index > 512) throw new Error("IMDb record exceeds line limit");
           line(pending.slice(0, index)); pending = pending.slice(index + 1);
           if (batch.length >= IMDB_CONFIG.batchSize) {
-            commitBatch.immediate(batch); batch = [];
+            commitBatch(batch); batch = [];
             peakRss = Math.max(peakRss, process.memoryUsage().rss);
             await setImmediate();
           }
@@ -118,12 +119,12 @@ export async function importRatings(db: Database.Database, options: {
       if (pending) line(pending);
     }, { signal: controller.signal });
     if (source.length !== undefined && source.length !== compressed) throw new Error("Incomplete IMDb download");
-    if (batch.length) commitBatch.immediate(batch);
+    if (batch.length) commitBatch(batch);
     if (!header || rows < (options.minimumRows ?? IMDB_CONFIG.minimumRows)
       || rows < metadata.row_count * IMDB_CONFIG.minimumPreviousRatio
       || invalid / Math.max(1, rows + invalid) > IMDB_CONFIG.maximumInvalidRatio) throw new Error("IMDb dataset failed row-count/validation sanity checks");
     const duration = Date.now() - started;
-    db.transaction(() => {
+    transaction(db, () => {
       assertOwner();
       db.exec(`ALTER TABLE imdb_ratings RENAME TO imdb_ratings_old;
         ALTER TABLE imdb_ratings_staging RENAME TO imdb_ratings;
@@ -131,15 +132,15 @@ export async function importRatings(db: Database.Database, options: {
       db.prepare(`UPDATE import_metadata SET last_success=?,status='success',duration_ms=?,row_count=?,last_error=NULL,
         source_url=?,source_etag=?,source_modified=?,source_bytes=?,peak_rss_bytes=? WHERE id=1`)
         .run(Date.now(), duration, rows, IMDB_RATINGS_URL, source.etag ?? null, source.modified ?? null, compressed, peakRss);
-    }).immediate();
-    db.pragma("wal_checkpoint(PASSIVE)");
+    }, "IMMEDIATE");
+    db.exec("PRAGMA wal_checkpoint(PASSIVE)");
     return { status: "success" as const, rows, duration, peakRss };
   } catch (error) {
-    if (ownsImportLock(db, owner)) db.transaction(() => {
+    if (ownsImportLock(db, owner)) transaction(db, () => {
       db.exec("DROP TABLE IF EXISTS imdb_ratings_staging");
       db.prepare("UPDATE import_metadata SET status='failed',last_failure=?,duration_ms=?,last_error=? WHERE id=1")
         .run(Date.now(), Date.now() - started, error instanceof Error ? (error.message || error.name).slice(0, 500) : "IMDb import failed");
-    }).immediate();
+    }, "IMMEDIATE");
     throw error;
   } finally {
     clearTimeout(timeout); clearInterval(heartbeat); releaseImportLock(db, owner);

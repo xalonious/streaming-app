@@ -1,5 +1,6 @@
 import "server-only";
-import type Database from "better-sqlite3";
+import { transaction } from "./transactions";
+import type { DatabaseSync } from "node:sqlite";
 import { seedProviders } from "../providers/seed";
 
 const migrations = [String.raw`
@@ -57,14 +58,14 @@ const migrations = [String.raw`
   );
 `];
 
-export function migrate(db: Database.Database) {
-  db.transaction(() => {
-    const version = db.pragma("user_version", { simple: true }) as number;
+export function migrate(db: DatabaseSync) {
+  transaction(db, () => {
+    const version = db.prepare("PRAGMA user_version").get()!.user_version as number;
     if (version > migrations.length) throw new Error("Database schema is newer than this application");
     for (let i = version; i < migrations.length; i++) {
       db.exec(migrations[i]);
       if (i === 1) seedProviders(db, process.env.STREAM_SOURCE);
-      db.pragma(`user_version = ${i + 1}`);
+      db.exec(`PRAGMA user_version = ${i + 1}`);
     }
-  }).immediate();
+  }, "IMMEDIATE");
 }
