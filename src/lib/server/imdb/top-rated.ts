@@ -24,7 +24,15 @@ type Title = {
   name?: string;
   [key: string]: unknown;
 };
-type FindResults = { movie_results?: Title[]; tv_results?: Title[] };
+type FindResults = { movie_results?: Title[]; tv_results?: Title[]; tv_episode_results?: unknown[] };
+type RankedTitle = ReturnType<typeof normalizeSearchResult>;
+
+function hasRankingMetadata(title: RankedTitle) {
+  return typeof title.title === "string" && title.title.trim().length > 0
+    && typeof title.overview === "string" && title.overview.trim().length > 0
+    && typeof title.year === "string" && /^\d{4}$/.test(title.year)
+    && !!(title.backdrop || title.poster);
+}
 
 export async function rankImdbTitles(
   db: DatabaseSync,
@@ -47,27 +55,31 @@ export async function rankImdbTitles(
     for (const result of resolved) {
       if (result.status === "rejected") throw result.reason;
       const { candidate, data } = result.value;
+      if (type === "movie" && data.tv_episode_results?.length) continue;
       const titles = type === "movie" ? data.movie_results : data.tv_results;
-      const title = titles?.find(item => Number.isSafeInteger(item.id) && item.id > 0 && item.adult !== true);
+      const title = titles?.filter(item => Number.isSafeInteger(item.id) && item.id > 0
+        && item.adult !== true && !(type === "movie" && item.video === true))
+        .map(item => normalizeSearchResult({
+          ...item,
+          media_type: type,
+          rating: { value: candidate.average_rating, voteCount: candidate.vote_count, source: "imdb" },
+        })).find(hasRankingMetadata);
       if (!title || seen.has(title.id)) continue;
       seen.add(title.id);
       const path = `/find/${candidate.imdb_id}`;
       saveMapping(db, { type, id: title.id }, candidate.imdb_id,
         mappingRetention(db, path, { external_source: "imdb_id" }));
-      results.push(normalizeSearchResult({
-        ...title,
-        media_type: type,
-        rating: { value: candidate.average_rating, voteCount: candidate.vote_count, source: "imdb" },
-      }));
+      results.push(title);
       if (results.length === TOP_RATED_CONFIG.results) break;
     }
   }
   return results;
 }
 
-export function getImdbTopRated(type: "movie" | "tv", db = getDatabase()): ReturnType<typeof normalizeSearchResult>[] {
+export function getImdbTopRated(type: "movie" | "tv", db = getDatabase()): RankedTitle[] {
   const row = db.prepare("SELECT results_json FROM imdb_top_rated WHERE media_type=?").get(type) as { results_json: string } | undefined;
-  return row ? JSON.parse(row.results_json) : [];
+  const results: RankedTitle[] = row ? JSON.parse(row.results_json) : [];
+  return results.filter(hasRankingMetadata);
 }
 
 function activeImport(db: DatabaseSync) {
@@ -78,8 +90,11 @@ function activeImport(db: DatabaseSync) {
 export function needsTopRatedRefresh(db: DatabaseSync) {
   const generation = activeImport(db);
   if (generation === null) return false;
-  const saved = db.prepare("SELECT media_type FROM imdb_top_rated WHERE import_success=?").all(generation);
-  return saved.length !== 2;
+  const saved = db.prepare("SELECT results_json FROM imdb_top_rated WHERE import_success=?").all(generation) as { results_json: string }[];
+  return saved.length !== 2 || saved.some(row => {
+    const results: RankedTitle[] = JSON.parse(row.results_json);
+    return !results.length || !results.every(hasRankingMetadata);
+  });
 }
 
 async function findTitle(imdbId: string): Promise<FindResults> {

@@ -270,7 +270,6 @@ HTTPS equivalent before retrying. Preserve a backup of the database before upgra
 | `npm start` | Serve the production application, including its API, on port 2222 |
 | `npm run lint` | Run ESLint with zero warnings allowed |
 | `npm run typecheck` | Run TypeScript without emitting files |
-| `npm run test:db` | Test legacy database copies, transactions, cache, IMDb imports/locks, and provider CRUD |
 | `npm run imdb:import` | Manually refresh the official IMDb dataset using the safe worker importer |
 | `npm run imdb:rankings` | Prepare saved movie/series rankings from the existing IMDb dataset |
 | `npm run build:tools` | Rebuild generated Node.js maintenance/worker bundles |
@@ -352,6 +351,11 @@ is an application ranking, not a reproduction of IMDb's Top 250 chart formula.
 Up to 1,000 qualifying candidates are scanned to return 20 titles per media type.
 TMDB's external-ID find endpoint supplies movie/series classification, metadata,
 artwork and navigation IDs; episode matches and adult titles are excluded.
+Movie matches that also resolve to TV episodes, and records marked as videos,
+are skipped. Both lists require a title, release/first-air year, overview, and
+at least one poster or backdrop. These checks apply regardless of language and
+keep incomplete TMDB records out of the row. Existing saved lists hide incomplete
+entries immediately and are rebuilt by the next startup or maintenance check.
 Preparation runs in the background worker after the daily import. Lookups use
 the shared persistent metadata cache and at most six concurrent requests.
 Both complete lists are saved together in the separate `imdb_top_rated` table;
@@ -609,17 +613,16 @@ Check the application and build it for production:
 ```bash
 npm run lint
 npm run typecheck
-npm run test:db
+npm run test:rankings
 npm run build
 ```
 
-Database tests use temporary files under `.test-build/` and populated legacy
-schema fixtures at versions 1–4. They migrate copies, verify original files and
-existing rows remain intact, and exercise rollback, WAL readers, competing writers,
-lease ownership, importer failure recovery, saved rankings, cache and providers.
-They use local compressed IMDb fixtures and stub TMDB lookups; they do not download
-the full IMDb dataset or require an API key. To validate deployment-specific data,
-also start the upgraded app against a consistent backup copy of that database.
+Ranking tests use in-memory databases and stub TMDB lookups, including the
+episode/movie collision reported for the Attack on Titan special. They check
+metadata requirements, language-independent inclusion, vote thresholds, ordering,
+refilling skipped entries, saved-list refreshes, and atomic replacement on failure.
+They do not download the IMDb dataset or require an API key; generated test bundles
+are kept under `.test-build/`.
 
 ## Production deployment
 
