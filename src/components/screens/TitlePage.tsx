@@ -83,7 +83,7 @@ export default function TitlePage() {
     tmdbId, enabled: isTv && !isError, seasonNumber, seasonData, episodeFilter, setSeasonCache,
   });
 
-  const { runtime, numberOfSeasons, rating, trailer, trailerEmbedUrl, trailerModalUrl, fullCast, logoUrl } = useTitleMeta(data, isMovie, isTv, tmdbId, type);
+  const { runtime, numberOfSeasons, rating, ratingSource, trailer, trailerEmbedUrl, trailerModalUrl, fullCast, logoUrl } = useTitleMeta(data, isMovie, isTv, tmdbId, type);
 
   const collectionSummary = isMovie && data && !(data as ErrorLike).__error
     ? (data as any).belongs_to_collection
@@ -148,7 +148,7 @@ export default function TitlePage() {
           <div className="flex flex-wrap items-center gap-2 mb-3 text-sm text-zinc-300">
             {rating && (
               <span className="flex items-center gap-1.5">
-                <StarIcon />
+                <StarIcon source={ratingSource} />
                 <span className="font-semibold text-white">{rating}</span>
               </span>
             )}

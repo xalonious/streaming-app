@@ -360,7 +360,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                           {hasRating && (
                             <><span className="text-zinc-600">|</span>
                             <span className="flex items-center gap-1">
-                              <StarIcon />
+                              <StarIcon source={rating.source} />
                               {rating.value!.toFixed(1)}
                             </span></>
                           )}

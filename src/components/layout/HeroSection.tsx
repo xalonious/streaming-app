@@ -112,7 +112,7 @@ export function HeroSection({ items, onPlay, onDetails }: {
           <div className="flex items-center flex-wrap gap-2 mb-3 text-xs text-zinc-300">
             {hasRating && (
               <span className="flex items-center gap-1">
-                <StarIcon />
+                <StarIcon source={rating.source} />
                 <span className="text-yellow-400 font-semibold">{rating.value!.toFixed(1)}</span>
               </span>
             )}

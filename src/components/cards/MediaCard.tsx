@@ -50,7 +50,7 @@ export function MediaCard({ item, onClick, rank, variant = "poster", imageLoadin
         <div className="text-white text-sm font-semibold truncate">{item.title}</div>
         <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-zinc-400 flex-wrap">
           {rating.value !== null && rating.value >= 1 && (
-            <span className="flex items-center gap-1"><StarIcon /><span className="text-zinc-300">{rating.value.toFixed(1)}</span></span>
+            <span className="flex items-center gap-1"><StarIcon source={rating.source} /><span className="text-zinc-300">{rating.value.toFixed(1)}</span></span>
           )}
           {item.year && <><span className="text-zinc-600">·</span><span>{item.year}</span></>}
           <span className="text-zinc-600">·</span>

@@ -41,7 +41,7 @@ export function RecommendationsGrid({
               <div className="text-white text-sm font-semibold truncate">{item.title}</div>
               <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-zinc-400 flex-wrap">
                 {(preferredRating(item).value ?? 0) >= 1 && (
-                  <span className="flex items-center gap-1"><StarIcon /><span className="text-zinc-300">{preferredRating(item).value!.toFixed(1)}</span></span>
+                  <span className="flex items-center gap-1"><StarIcon source={preferredRating(item).source} /><span className="text-zinc-300">{preferredRating(item).value!.toFixed(1)}</span></span>
                 )}
                 {item.year && <><span className="text-zinc-600">·</span><span>{item.year}</span></>}
                 <span className="text-zinc-600">·</span>

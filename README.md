@@ -337,8 +337,8 @@ Title details and normalized cards add a backward-compatible `rating` field:
 
 Original TMDB fields, including `vote_average` and `vote_count`, are preserved.
 IMDb is preferred when a local mapping and rating exist. Otherwise TMDB is used;
-missing ratings remain hidden. Ratings display only their numeric value, without
-source labels. Homepage hero,
+missing ratings remain hidden. Ratings display their numeric value with a red star
+for IMDb or a purple star for TMDB, without source labels or tooltips. Homepage hero,
 Top 10, trending, genre and top-rated cards, search, title details, actor-credit
 cards, collection cards and recommendation grids share this behavior. Discovery
 ordering outside the Top rated row and all navigation/player identifiers remain TMDB-based.

@@ -50,5 +50,5 @@ export function useTitleMeta(data: any, isMovie: boolean, isTv: boolean, tmdbId:
       .catch(() => {});
   }, [tmdbId, type]);
 
-  return { runtime, numberOfSeasons, rating, trailer, trailerEmbedUrl, trailerModalUrl, fullCast, logoUrl };
+  return { runtime, numberOfSeasons, rating, ratingSource: preferred.source, trailer, trailerEmbedUrl, trailerModalUrl, fullCast, logoUrl };
 }
