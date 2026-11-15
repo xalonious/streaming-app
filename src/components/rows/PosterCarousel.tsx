@@ -11,6 +11,7 @@ export function PosterCarousel({
   rightContent,
   children,
   resetKey,
+  positionKey,
   scrollAmount,
   scrollItems,
   cardVariant = "poster",
@@ -24,6 +25,7 @@ export function PosterCarousel({
   rightContent?: ReactNode;
   children?: ReactNode;
   resetKey?: unknown;
+  positionKey?: string;
   scrollAmount?: number;
   scrollItems?: number;
   cardVariant?: MediaCardVariant;
@@ -66,7 +68,9 @@ export function PosterCarousel({
         </div>
       ) : (
         <CardRow
+          key={positionKey}
           resetKey={resetKey}
+          positionKey={positionKey}
           scrollAmount={scrollAmount}
           scrollItems={scrollItems}
           onScrollIntent={preloadMoreImages}

@@ -1,58 +1,76 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { type SearchResult, type Genre, getGenresTmdb, discoverByGenreTmdb } from "../../api/tmdb";
+import { type SearchResult, type Genre, type MediaType, getGenresTmdb, discoverByGenreTmdb } from "../../api/tmdb";
 import { ChevronDown, CheckIcon } from "../ui/Icons";
 import { useDropdown } from "../../hooks/useDropdown";
 import { MediaTypeToggle } from "../ui/MediaTypeToggle";
 import { PosterCarousel } from "./PosterCarousel";
+import { useBrowseState } from "../../hooks/useBrowseState";
+import { getBrowseSelection, updateBrowseSelection } from "../../lib/browseState";
+
+const genreCache = new Map<MediaType, Genre[]>();
+const discoveryCache = new Map<string, SearchResult[]>();
 
 export function GenreRow({ onOpen }: { onOpen: (item: SearchResult) => void }) {
-  const [mediaType, setMediaType] = useState<"movie" | "tv">("movie");
-  const [genres, setGenres] = useState<Genre[]>([]);
-  const [activeGenre, setActiveGenre] = useState<Genre | null>(null);
-  const [items, setItems] = useState<SearchResult[]>([]);
+  const { genreType: mediaType, genre } = useBrowseState();
+  const [genreData, setGenreData] = useState(() => ({ type: mediaType, genres: genreCache.get(mediaType) ?? [] }));
+  const genres = genreData.type === mediaType ? genreData.genres : genreCache.get(mediaType) ?? [];
+  const activeGenre = genres.find(g => g.id === genre?.id) ?? null;
+  const discoveryKey = `${mediaType}:${activeGenre?.id ?? "none"}`;
+  const [discovery, setDiscovery] = useState(() => ({ key: discoveryKey, items: discoveryCache.get(discoveryKey) }));
+  const items = discovery.key === discoveryKey ? discovery.items : discoveryCache.get(discoveryKey);
 
   const { open: dropdownOpen, setOpen: setDropdownOpen, pos: dropdownPos, btnRef: genreBtnRef, wrapRef: genreWrapRef, listRef: genreListRef } = useDropdown();
 
   useEffect(() => {
+    let cancelled = false;
     getGenresTmdb(mediaType)
       .then(d => {
-        setGenres(d.genres);
-        setActiveGenre(prev => {
-          const match = prev
-            ? d.genres.find(g =>
-                g.name.toLowerCase().includes(prev.name.toLowerCase().split(" ")[0]) ||
-                prev.name.toLowerCase().includes(g.name.toLowerCase().split(" ")[0])
-              )
-            : null;
-          return match ?? d.genres[0] ?? null;
-        });
+        genreCache.set(mediaType, d.genres);
+        if (cancelled) return;
+        setGenreData({ type: mediaType, genres: d.genres });
+        const previous = getBrowseSelection().genre;
+        const match = d.genres.find(g => g.id === previous?.id) ?? (previous
+          ? d.genres.find(g =>
+              g.name.toLowerCase().includes(previous.name.toLowerCase().split(" ")[0]) ||
+              previous.name.toLowerCase().includes(g.name.toLowerCase().split(" ")[0])
+            ) : null);
+        const next = match ?? d.genres[0] ?? null;
+        if (next?.id !== previous?.id || next?.name !== previous?.name) updateBrowseSelection({ genre: next });
       })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, [mediaType]);
 
   useEffect(() => {
     if (!activeGenre) return;
     let cancelled = false;
     discoverByGenreTmdb(mediaType, activeGenre.id)
-      .then(d => { if (!cancelled) setItems(d.results ?? []); })
-      .catch(() => {});
+      .then(d => {
+        const items = d.results ?? [];
+        discoveryCache.set(discoveryKey, items);
+        if (!cancelled) setDiscovery({ key: discoveryKey, items });
+      })
+      .catch(() => {
+        if (!cancelled) setDiscovery({ key: discoveryKey, items: discoveryCache.get(discoveryKey) ?? [] });
+      });
     return () => { cancelled = true; };
-  }, [activeGenre, mediaType]);
+  }, [activeGenre, mediaType, discoveryKey]);
 
   return (
     <PosterCarousel
       title="Browse by genre"
-      items={items}
+      items={items ?? []}
+      loading={!items}
       onOpen={onOpen}
-      resetKey={`${mediaType}:${activeGenre?.id ?? "none"}`}
+      positionKey={`home:genre:${discoveryKey}`}
       cardVariant="backdrop"
       scrollItems={4}
       rightContent={
         <MediaTypeToggle
           value={mediaType}
           options={[{ label: "Movies", value: "movie" }, { label: "Series", value: "tv" }]}
-          onChange={(v) => setMediaType(v)}
+          onChange={(genreType) => updateBrowseSelection({ genreType })}
         />
       }
     >
@@ -86,7 +104,7 @@ export function GenreRow({ onOpen }: { onOpen: (item: SearchResult) => void }) {
             {genres.map(g => (
               <button
                 key={g.id}
-                onClick={() => { setActiveGenre(g); setDropdownOpen(false); }}
+                onClick={() => { updateBrowseSelection({ genre: g }); setDropdownOpen(false); }}
                 className={`flex items-center justify-between w-full px-4 py-2.5 text-sm border-none cursor-pointer text-left transition-colors border-b border-white/[0.05] last:border-0 ${
                   activeGenre?.id === g.id ? "bg-white/[0.08] text-white" : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
                 }`}
