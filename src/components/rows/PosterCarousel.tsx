@@ -77,7 +77,7 @@ export function PosterCarousel({
         >
           {items.map((item, idx) => (
             <MediaCard
-              key={item.id}
+              key={`${item.type}:${item.id}`}
               item={item}
               onClick={() => onOpen(item)}
               rank={badge ? idx + 1 : undefined}

@@ -56,6 +56,24 @@ const migrations = [String.raw`
     import_success INTEGER NOT NULL,
     prepared_at INTEGER NOT NULL
   );
+`, String.raw`
+  CREATE TABLE watchlist (
+    media_type TEXT NOT NULL CHECK(media_type IN ('movie','tv')),
+    tmdb_id INTEGER NOT NULL CHECK(tmdb_id > 0),
+    title_json TEXT NOT NULL,
+    added_at INTEGER NOT NULL,
+    PRIMARY KEY(media_type, tmdb_id)
+  );
+  CREATE INDEX watchlist_added ON watchlist(added_at DESC);
+`, String.raw`
+  CREATE TABLE recently_played (
+    media_type TEXT NOT NULL CHECK(media_type IN ('movie','tv')),
+    tmdb_id INTEGER NOT NULL CHECK(tmdb_id > 0),
+    title_json TEXT NOT NULL,
+    last_played_at INTEGER NOT NULL,
+    PRIMARY KEY(media_type, tmdb_id)
+  );
+  CREATE INDEX recently_played_time ON recently_played(last_played_at DESC);
 `];
 
 export function migrate(db: DatabaseSync) {

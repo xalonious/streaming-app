@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
-import { getBrowsePosition, persistBrowseState, saveBrowsePosition } from "../lib/browseState";
+import { getBrowsePosition, saveBrowsePosition } from "../lib/browseState";
 
 const PAGE_KEY = "home:page";
 const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
@@ -39,9 +39,6 @@ export function useBrowseScroll() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (SCROLL_KEYS.has(event.key)) onUserScroll();
     };
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") persistBrowseState();
-    };
 
     observer.observe(page);
     window.scrollTo({ top: target, behavior: "instant" });
@@ -50,8 +47,6 @@ export function useBrowseScroll() {
     window.addEventListener("wheel", onUserScroll, { passive: true });
     window.addEventListener("touchstart", onUserScroll, { passive: true });
     window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("pagehide", persistBrowseState);
-    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       observer.disconnect();
       cancelAnimationFrame(frame);
@@ -59,9 +54,6 @@ export function useBrowseScroll() {
       window.removeEventListener("wheel", onUserScroll);
       window.removeEventListener("touchstart", onUserScroll);
       window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("pagehide", persistBrowseState);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      persistBrowseState();
     };
   }, []);
 

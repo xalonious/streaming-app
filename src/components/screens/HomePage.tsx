@@ -9,12 +9,14 @@ import { HeroSection } from "../layout/HeroSection";
 import { PosterCarousel } from "../rows/PosterCarousel";
 import { MediaTypeToggle } from "../ui/MediaTypeToggle";
 import { GenreRow } from "../rows/GenreRow";
+import { WatchlistRow } from "../rows/WatchlistRow";
+import { RecentlyPlayedRow } from "../rows/RecentlyPlayedRow";
 import { IntroLoader } from "../ui/IntroLoader";
 import { ProviderSettings } from "../ui/ProviderSettings";
 import { playerHref } from "../../lib/playerNavigation";
 import { useBrowseState } from "../../hooks/useBrowseState";
 import { useBrowseScroll } from "../../hooks/useBrowseScroll";
-import { updateBrowseSelection } from "../../lib/browseState";
+import { rememberBrowseForDetails, updateBrowseSelection } from "../../lib/browseState";
 
 const homeCache = {
   main: null as SearchResult[] | null,
@@ -96,14 +98,17 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, [trendingType]);
 
-  const openTitle = (item: SearchResult) => router.push(`/title/${item.type}/${item.id}`, { scroll: false });
+  const openTitle = (item: SearchResult) => {
+    rememberBrowseForDetails();
+    router.push(`/title/${item.type}/${item.id}`, { scroll: false });
+  };
 
   return (
     <div ref={pageRef} className="home-page min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
       <IntroLoader loading={mainLoading} />
       <Navbar onSearchOpen={() => setSearchOpen(true)} onSettingsOpen={() => setSettingsOpen(true)} />
       {settingsOpen && <ProviderSettings onClose={() => setSettingsOpen(false)} />}
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} onOpenTitle={openTitle} />
       {mainLoading ? (
         <div className="w-full bg-black animate-pulse" style={{ height: "91vh", minHeight: 500 }} />
       ) : mainItems.length > 0 ? (
@@ -137,6 +142,9 @@ export default function HomePage() {
             sectionClassName="px-4 sm:px-6 pt-4 pb-8"
           />
         )}
+
+        <WatchlistRow onOpen={openTitle} />
+        <RecentlyPlayedRow onOpen={openTitle} />
 
         <PosterCarousel
           title={<>Trending <span className="text-zinc-400 font-normal">Today</span></>}

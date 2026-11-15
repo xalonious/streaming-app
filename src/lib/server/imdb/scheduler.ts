@@ -6,6 +6,7 @@ import { getDatabase, databasePath } from "../db/connection";
 import { IMDB_CONFIG } from "./constants";
 import { getCache } from "../cache/cache";
 import { needsTopRatedRefresh, TOP_RATED_CONFIG } from "./top-rated";
+import { RecentlyPlayedRepository } from "../recently-played/repository";
 
 export function needsImport(lastSuccess: number | null, hasRatings: boolean, now = Date.now()) {
   return !hasRatings || !lastSuccess || now - lastSuccess >= IMDB_CONFIG.maxAge;
@@ -51,6 +52,8 @@ export function startScheduler(dependencies: {
 } = {}) {
   if (state.streamingScheduler) return state.streamingScheduler;
   const db = getDatabase();
+  const recentlyPlayed = new RecentlyPlayedRepository(db);
+  recentlyPlayed.cleanup();
   let child: ChildProcess | undefined;
   const controller = createRefreshController(scheduled => {
     const worker = (dependencies.launch ?? launchImportWorker)(scheduled); child = worker.child; return worker;
@@ -61,6 +64,7 @@ export function startScheduler(dependencies: {
   const daily = (dependencies.schedule ?? cron.schedule)(IMDB_CONFIG.schedule, () => controller.trigger(true), { timezone: "UTC", noOverlap: true, unref: true });
   const maintenance = setInterval(() => {
     try {
+      recentlyPlayed.cleanup();
       getCache().maintain();
       db.prepare("DELETE FROM imdb_mappings WHERE expires_at<=?").run(Date.now());
       void controller.trigger();

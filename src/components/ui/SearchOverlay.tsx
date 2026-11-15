@@ -13,7 +13,7 @@ const STORAGE_KEY = "xalonstream:recentQueries";
 const RECENT_CLEAR_ROW_MS = 220;
 const RECENT_CLEAR_STAGGER_MS = 25;
 
-export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SearchOverlay({ open, onClose, onOpenTitle }: { open: boolean; onClose: () => void; onOpenTitle?: (item: SearchResult) => void }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const filterBtnRef = useRef<HTMLButtonElement>(null);
@@ -146,7 +146,8 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
 
   function handleDetails(item: SearchResult) {
     commit(q.trim());
-    router.push(`/title/${item.type}/${item.id}`, { scroll: false });
+    if (onOpenTitle) onOpenTitle(item);
+    else router.push(`/title/${item.type}/${item.id}`, { scroll: false });
     onClose();
   }
 

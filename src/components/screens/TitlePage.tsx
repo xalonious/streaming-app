@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useRecommendations } from "../../hooks/useRecommendations";
-import { PlayIcon, StarIcon, SearchIcon, ChevronLeft } from "../ui/Icons";
+import { PlayIcon, StarIcon, SearchIcon, ChevronLeft, PlusIcon, CheckIcon } from "../ui/Icons";
 import { useTitleMeta } from "../../hooks/useTitleMeta";
 import { ActorCard } from "../cards/ActorCard";
 import { SeasonDropdown } from "../ui/SeasonDropdown";
@@ -15,6 +15,8 @@ import { useSeasonEpisodes } from "../../hooks/useSeasonEpisodes";
 import { useCrossSeasonEpisodeSearch } from "../../hooks/useCrossSeasonEpisodeSearch";
 import { useCollection } from "../../hooks/useCollection";
 import { playerHref } from "../../lib/playerNavigation";
+import { useWatchlist } from "../../hooks/useWatchlist";
+import { refreshWatchlist, setWatchlistSaved } from "../../lib/watchlist";
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -29,6 +31,9 @@ export default function TitlePage() {
   const { type, id } = useParams<Record<string, string>>();
   const router = useRouter();
   const tmdbId = Number(id);
+  const watchlist = useWatchlist();
+  const isSaved = watchlist.items.some(item => item.type === type && item.id === tmdbId);
+  const watchlistPending = watchlist.pending.includes(`${type}:${tmdbId}`);
 
   const {
     data, loading, isError, isTv, isMovie,
@@ -188,7 +193,19 @@ export default function TitlePage() {
                 <PlayIcon size={13} /> Trailer
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => void setWatchlistSaved(isTv ? "tv" : "movie", tmdbId, !isSaved)}
+              disabled={watchlist.loading || watchlistPending}
+              aria-label={isSaved ? "Remove from watchlist" : "Add to watchlist"}
+              aria-pressed={isSaved}
+              title={isSaved ? "Remove from watchlist" : "Add to watchlist"}
+              className={`flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-sm transition-all disabled:opacity-50 disabled:cursor-wait ${isSaved ? "border-[#e50914]/60 bg-[#e50914]/15 text-white hover:bg-[#e50914]/25" : "border-white/20 bg-white/10 text-white hover:bg-white/20"}`}
+            >
+              {watchlistPending ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" /> : isSaved ? <CheckIcon /> : <PlusIcon />}
+            </button>
           </div>
+          {watchlist.error && <p role="alert" className="mt-3 text-xs text-red-300">{watchlist.error} <button onClick={() => void refreshWatchlist()} className="underline hover:text-white">Retry</button></p>}
         </div>
       </div>
       <div className="px-6 sm:px-14 pb-16 pt-10">
