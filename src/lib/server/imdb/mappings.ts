@@ -4,6 +4,7 @@ import { getDatabase } from "../db/connection";
 import { CACHE_CONFIG } from "../cache/config";
 import { cacheKey } from "../cache/keys";
 import { createTmdbClient } from "../tmdbClient";
+import { notifyRatingChange } from "./ratingEvents";
 
 export type MediaIdentity = { id: number; type: "movie" | "tv" };
 export type Mapping = { media_type: "movie" | "tv"; tmdb_id: number; imdb_id: string | null; average_rating: number | null; vote_count: number | null };
@@ -16,10 +17,11 @@ export function lookupRatings(db: DatabaseSync, titles: MediaIdentity[]) {
 }
 export function saveMapping(db: DatabaseSync, title: MediaIdentity, imdbId: unknown, expiresAt = Date.now() + CACHE_CONFIG.ttl.mappings) {
   const id = typeof imdbId === "string" && /^tt\d{7,12}$/.test(imdbId) ? imdbId : null;
-  db.prepare(`INSERT INTO imdb_mappings VALUES(?,?,?,?,?) ON CONFLICT(media_type,tmdb_id)
+  const result = db.prepare(`INSERT INTO imdb_mappings VALUES(?,?,?,?,?) ON CONFLICT(media_type,tmdb_id)
     DO UPDATE SET imdb_id=excluded.imdb_id,updated_at=excluded.updated_at,expires_at=excluded.expires_at
     WHERE imdb_mappings.imdb_id IS NOT excluded.imdb_id OR imdb_mappings.expires_at != excluded.expires_at`)
     .run(title.type, title.id, id, Date.now(), Math.min(expiresAt, Date.now() + CACHE_CONFIG.ttl.mappings));
+  if (result.changes) notifyRatingChange(db, title);
 }
 export function mappingRetention(db: DatabaseSync, path: string, params = {}) {
   const row = db.prepare("SELECT stale_until FROM api_cache WHERE cache_key=?").get(cacheKey(path, params)) as { stale_until: number } | undefined;

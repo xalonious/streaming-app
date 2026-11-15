@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { type SearchResult } from "../../api/tmdb";
-import { StarIcon } from "../ui/Icons";
-import { preferredRating } from "../../lib/ratings";
+import { LiveRating } from "../ui/LiveRating";
 
 export function RecommendationsGrid({
   items,
@@ -24,7 +23,7 @@ export function RecommendationsGrid({
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
         {visibleItems.map(item => (
-          <Link scroll={false} prefetch={false} key={item.id} href={`/title/${item.type}/${item.id}`} className="group block">
+          <Link scroll={false} prefetch={false} key={`${item.type}:${item.id}`} href={`/title/${item.type}/${item.id}`} className="group block">
             <div className="relative rounded-xl overflow-hidden ring-1 ring-white/10 group-hover:ring-white/30 transition-all duration-200 group-hover:scale-[1.02]">
               {item.backdrop ?? item.poster ? (
                 <img
@@ -40,9 +39,7 @@ export function RecommendationsGrid({
             <div className="mt-2.5 px-0.5">
               <div className="text-white text-sm font-semibold truncate">{item.title}</div>
               <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-zinc-400 flex-wrap">
-                {(preferredRating(item).value ?? 0) >= 1 && (
-                  <span className="flex items-center gap-1"><StarIcon source={preferredRating(item).source} /><span className="text-zinc-300">{preferredRating(item).value!.toFixed(1)}</span></span>
-                )}
+                <LiveRating item={item} />
                 {item.year && <><span className="text-zinc-600">·</span><span>{item.year}</span></>}
                 <span className="text-zinc-600">·</span>
                 <span>{item.type === "tv" ? "TV Show" : "Movie"}</span>

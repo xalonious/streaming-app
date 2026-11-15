@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import { type SearchResult } from "../../api/tmdb";
 import useDebounce from "../../hooks/useDebounce";
 import { useTmdbSearch } from "../../hooks/useTmdbSearch";
-import { SearchIcon, CloseIcon, PlayIcon, InfoIcon, StarIcon, ChevronDown, ClockIcon, CheckIcon } from "./Icons";
+import { SearchIcon, CloseIcon, PlayIcon, InfoIcon, ChevronDown, ClockIcon, CheckIcon } from "./Icons";
 import { useRecentQueries } from "../../hooks/useRecentQueries";
-import { preferredRating } from "../../lib/ratings";
+import { LiveRating } from "./LiveRating";
 import { playerHref } from "../../lib/playerNavigation";
 
 const STORAGE_KEY = "xalonstream:recentQueries";
@@ -332,8 +332,6 @@ export function SearchOverlay({ open, onClose, onOpenTitle }: { open: boolean; o
               {results.map((item, i) => {
                 const key = `${item.type}:${item.id}`;
                 const isExpanded = expandedId === key;
-                const rating = preferredRating(item);
-                const hasRating = rating.value !== null && rating.value >= 1;
                 return (
                   <div
                     key={key}
@@ -358,13 +356,7 @@ export function SearchOverlay({ open, onClose, onOpenTitle }: { open: boolean; o
                         <div className="flex flex-wrap items-center gap-1 mt-0.5 text-[11px] text-zinc-400">
                           <span>{item.type === "tv" ? "TV Show" : "Movie"}</span>
                           {item.year && <><span className="text-zinc-600">|</span><span>{item.year}</span></>}
-                          {hasRating && (
-                            <><span className="text-zinc-600">|</span>
-                            <span className="flex items-center gap-1">
-                              <StarIcon source={rating.source} />
-                              {rating.value!.toFixed(1)}
-                            </span></>
-                          )}
+                          <LiveRating item={item} separator="|" valueClassName="" />
                         </div>
                       </div>
                       <span

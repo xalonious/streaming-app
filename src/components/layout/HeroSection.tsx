@@ -3,7 +3,7 @@ import { type SearchResult, getTitleImages } from "../../api/tmdb";
 import { StarIcon, PlayIcon, InfoIcon } from "../ui/Icons";
 import { useSlideshow } from "../../hooks/useSlideshow";
 import { getTvDetails } from "../../api/details";
-import { preferredRating } from "../../lib/ratings";
+import { useLiveRating } from "../../hooks/useLiveRating";
 
 export function HeroSection({ items, onPlay, onDetails }: {
   items: SearchResult[];
@@ -56,11 +56,11 @@ export function HeroSection({ items, onPlay, onDetails }: {
 
   const active = top10[activeIdx];
   const prev = prevIdx !== null ? top10[prevIdx] : null;
+  const rating = useLiveRating(active?.type, active?.id, active ?? {});
 
   if (!active) return null;
 
   const logoUrl = logos[cacheKey(active)] ?? null;
-  const rating = preferredRating(active);
   const hasRating = rating.value !== null && rating.value >= 1;
   const numberOfSeasons = active.type === "tv" ? seasonCounts[cacheKey(active)] : null;
 

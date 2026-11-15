@@ -1,6 +1,5 @@
 import { type SearchResult } from "../../api/tmdb";
-import { StarIcon } from "../ui/Icons";
-import { preferredRating } from "../../lib/ratings";
+import { LiveRating } from "../ui/LiveRating";
 
 export type MediaCardVariant = "poster" | "backdrop";
 
@@ -14,7 +13,6 @@ export function MediaCard({ item, onClick, rank, variant = "poster", imageLoadin
   const isBackdrop = variant === "backdrop";
   const imageSrc = isBackdrop ? item.backdrop ?? item.poster : item.poster;
   const rankLabel = rank?.toString().padStart(2, "0");
-  const rating = preferredRating(item);
 
   return (
     <button
@@ -49,9 +47,7 @@ export function MediaCard({ item, onClick, rank, variant = "poster", imageLoadin
       <div className="mt-2.5 px-0.5">
         <div className="text-white text-sm font-semibold truncate">{item.title}</div>
         <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-zinc-400 flex-wrap">
-          {rating.value !== null && rating.value >= 1 && (
-            <span className="flex items-center gap-1"><StarIcon source={rating.source} /><span className="text-zinc-300">{rating.value.toFixed(1)}</span></span>
-          )}
+          <LiveRating item={item} />
           {item.year && <><span className="text-zinc-600">·</span><span>{item.year}</span></>}
           <span className="text-zinc-600">·</span>
           <span>{item.type === "tv" ? "TV Show" : "Movie"}</span>
