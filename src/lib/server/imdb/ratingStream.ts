@@ -1,7 +1,7 @@
 import "server-only";
 import type { DatabaseSync } from "node:sqlite";
 import { ratingKey, type RatingIdentity, type RatingUpdate } from "../../ratings";
-import { lookupRatings } from "./mappings";
+import { lookupRatingsAndQueueMissing } from "./mappings";
 import { subscribeToRatingChanges } from "./ratingEvents";
 
 export function ratingStream(request: Request, titles: RatingIdentity[], db: DatabaseSync) {
@@ -35,7 +35,7 @@ export function ratingStream(request: Request, titles: RatingIdentity[], db: Dat
       };
       const snapshot = () => {
         if (closed || db.isTransaction) return;
-        const rows = new Map(lookupRatings(db, titles).map(row => [`${row.media_type}:${row.tmdb_id}`, row]));
+        const rows = lookupRatingsAndQueueMissing(db, titles);
         const updates: RatingUpdate[] = [];
         for (const title of titles) {
           const row = rows.get(ratingKey(title));
@@ -50,7 +50,7 @@ export function ratingStream(request: Request, titles: RatingIdentity[], db: Dat
       };
       const refresh = () => {
         try { snapshot(); }
-        catch { close(); } 
+        catch { close(); }
       };
 
       if (request.signal.aborted) { close(); return; }

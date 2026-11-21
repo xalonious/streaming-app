@@ -461,8 +461,9 @@ Defaults are centralized in `cache/config.ts`; routing policies are in
 `cache/policies.ts`. Upstream `max-age`, `Age`, `Expires` and shorter
 `stale-while-revalidate` directives reduce these lifetimes. `no-store`, `private`
 and `no-cache` responses are not retained; `must-revalidate` prevents stale use.
-Mappings derived from cached external IDs cannot outlive the source response's
-permitted lifetime. Deployment owners must also honor any more restrictive
+Mapping expiry is capped by the source cache deadline when it is available.
+Successful lookups without a usable cache deadline keep only the normalized
+mapping for five minutes. Deployment owners must also honor any more restrictive
 [TMDB API agreement](https://www.themoviedb.org/api-terms-of-use) applicable to
 their key; the application cannot discover account-specific contract terms.
 
@@ -538,8 +539,9 @@ single SQLite batch join for all ratings. Unresolved mappings return TMDB rating
 immediately and queue background TMDB external-ID requests, with two resolver
 workers, a 200-title queue, per-ID deduplication and failed-lookup cooldowns.
 Known missing IDs are stored as NULL. No resolution requests run before the
-dataset exists. Newly resolved ratings appear on subsequent metadata requests;
-existing frontend state is not polled or reset.
+dataset exists. The live ratings stream also queues missing and expired mappings
+for subscribed cards, including My watchlist and Recently played. It publishes
+resolved ratings to the visible cards without a page reload.
 
 Manual maintenance, normally unnecessary:
 
@@ -613,16 +615,14 @@ Check the application and build it for production:
 ```bash
 npm run lint
 npm run typecheck
-npm run test:rankings
+npm run test:ratings
 npm run build
 ```
 
-Ranking tests use in-memory databases and stub TMDB lookups, including the
-episode/movie collision reported for the Attack on Titan special. They check
-metadata requirements, language-independent inclusion, vote thresholds, ordering,
-refilling skipped entries, saved-list refreshes, and atomic replacement on failure.
-They do not download the IMDb dataset or require an API key; generated test bundles
-are kept under `.test-build/`.
+Rating tests use temporary SQLite databases and stub TMDB lookups. They cover
+mapping expiry, resolver deduplication and cooldowns, and live updates through the
+SSE route and client subscription store. They run without an API key or IMDb
+download. Generated test bundles are kept under `.test-build/`.
 
 ## Production deployment
 
